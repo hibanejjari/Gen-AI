@@ -18,14 +18,13 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 
 
 ## Architecture Overview
-```
-LLM Council (5 people, distributed with Tailscale)
 
-LEGEND
+**LLM Council (5 people, distributed with Tailscale)**
+
 - Each "PC" runs its own Ollama + one FastAPI service per model
 - Orchestrator PC is the single entry point for the UI and workflow
 - All inter-PC communication is REST over Tailscale IPs (http://100.x.x.x:PORT)
-
+---
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ PC: HIBA (Orchestrator + UI + Chairman + one council node)                   │
 │ WHY THIS PC:                                                                 │
@@ -65,7 +64,7 @@ LEGEND
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: WENDY (Council Node 5                                                    │
+│ PC: WENDY (Council Node 5)                                                    │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ---
@@ -113,18 +112,20 @@ HOW A FULL RUN HAPPENS (end-to-end)
 
 ---
 
-## Quick Start
+## How to start
 
 ### Prerequisites
 
 1. **Python 3.10+** on all machines
 2. **Ollama** installed on all machines
 3. **Model pulled** on all machines:
+for example
    ```bash
    ollama pull llama3.2:1b
    ```
+4. Have Tailsca;e installed and be connected on the same account
 
-### Single Machine (Development/Fallback)
+### On all Machines
 
 ```bash
 #  Clone/copy the project
@@ -148,7 +149,7 @@ python -m uvicorn council_node.main:app --host 0.0.0.0 --port 5001
 # then on main pc open web UI
 ---
 python -m uvicorn chairman.main:app --host 0.0.0.0 --port 9000
-
+---
 and other terminal :
 ---
 python -m uvicorn orchestrator.main:app --host 0.0.0.0 --port 8080
@@ -194,7 +195,7 @@ timeouts:
 fallback:
   min_council_members: 2  # Can run with 2 if 1 fails
 ```
-
+What we first did : 
 
 
 `Then :
@@ -229,11 +230,13 @@ Then executing on main machine.
 
 ---
 
+In conclusion : 
+
 ## Project Structure
 
 ```
 llm-council/
-├── README.md                    # This file
+├── README.md               
 ├── requirements.txt             # Python dependencies
 ├── config.yaml                  # Main configuration
 ├── config.distributed.yaml      # Template for distributed
