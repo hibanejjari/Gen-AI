@@ -1,8 +1,7 @@
-# LLM Council - Local Distributed Deployment
+# LLM Council : Local Distributed Deployment
 
 A distributed system where multiple local LLMs collaborate through a 3-stage council process to answer questions.
 
-## Table of Contents
 
 ## Table of Contents
 
@@ -14,60 +13,42 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 6. [Testing Strategy](#testing-strategy)
 7. [Project Structure](#project-structure)
 8. [Team Responsibilities](#team-responsibilities)
-  
 
-
-## Architecture Overview
-
-**LLM Council (5 people, distributed with Tailscale)**
-
-- Each "PC" runs its own Ollama + one FastAPI service per model
-- Orchestrator PC is the single entry point for the UI and workflow
-- All inter-PC communication is REST over Tailscale IPs (http://100.x.x.x:PORT)
----
+   ```
+## Architecture-overview
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: HIBA (Orchestrator + UI + Chairman + one council node)                   │
-│ WHY THIS PC:                                                                 │
-│ - Central entry point (frontend + orchestrator)                              │
-│ - Runs Chairman                                  │
-│ - Hosts an extra council node                                  │
-│ RUNS:                                                                        │
-│  1) frontend/index.html                                                      │        │
+│ PC: HIBA                                                                    │
+│ ROLES: Orchestrator + UI + Chairman + Council Node                           │
+│ WHY THIS PC:                                                                │
+│ - Central entry point for the whole system                                   │
+│ - Hosts the web UI and workflow logic                                        │
+│ - Runs the Chairman LLM for final synthesis                                  │
+│ - Also runs one council node to increase model diversity                     │
+│                                                                              │
+│ RUNNING SERVICES:                                                           │
+│  1) frontend/index.html                                                      │
+│     - User interface to submit queries and inspect results                   │
+│                                                                              │
 │  2) orchestrator/main.py  (port 8080)                                        │
-│     coordinates workflow, calls all nodes, health checks, aggregates    │
-│  3) chairman/main.py      (port 9000)                                        │
-│     synthesizes final answer only           │
-│  4) council node 4 ( extra : port 5002)                              │
-│     adds diversity            │
-└───────────────┬──────────────────────────────────────────────────────────────┘
-                │  REST calls (Tailscale network)
-                │  Stage 1: POST /opinion  → collect answers
-                │  Stage 2: POST /review   → collect anonymized scoring
-                │  Stage 3: POST /synthesize → final answer
-                ▼
- all on ollama :
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: CYPRIEN (Council Node 1)                                                 │)                               │
-│    council_node/main.py  (port 5001)                                        │
-│    exposes /health /opinion /review endpoints for orchestrator         │
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: LISA-VIVO15 (Council Node 2)                                             │                                                            │
-│ council_node/main.py  (port 5001)                                            │
+│     - Coordinates the 3-stage workflow                                       │
+│     - Performs health checks on all nodes                                    │
+│     - Collects opinions, reviews, and triggers synthesis                     │
 │                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: NEIL (Council Node 3)                                                    │
+│  3) chairman/main.py  (port 9000)                                            │
+│     - Receives all answers and reviews                                       │
+│     - Produces the final synthesized response only                           │
 │                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: WENDY (Council Node 5)                                                    │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
----
+│  4) council_node/main.py  (Node 4, port 5002)                                │
+│     - Acts as an additional independent council member                       │
+│     - Participates in Stage 1 and Stage 2                                    │
+└───────────────────────────────┬──────────────────────────────────────────────┘
+                                │
+                                │  REST API calls over Tailscale
+                                │  Stage 1: POST /opinion   (independent answers)
+                                │  Stage 2: POST /review    (anonymous scoring)
+                                │  Stage 3: POST /synthesize (final answer)
+                                │
+                                ▼
 
 HOW A FULL RUN HAPPENS (end-to-end)
 1) User opens UI on HIBA PC (Orchestrator serves frontend)
