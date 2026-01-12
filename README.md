@@ -10,9 +10,8 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 3. [Requirements Compliance](#requirements-compliance)
 4. [Quick Start](#quick-start)
 5. [Configuration Guide](#configuration-guide)
-6. [Testing Strategy](#testing-strategy)
-7. [Project Structure](#project-structure)
-8. [Team Responsibilities](#team-responsibilities)
+6. [Project Structure](#project-structure)
+7. [Team Responsibilities](#team-responsibilities)
 
 ## Architecture-overview
 ```
