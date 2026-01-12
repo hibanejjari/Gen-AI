@@ -1,6 +1,23 @@
 # LLM Council : Local Distributed Deployment
 
 A distributed system where multiple local LLMs collaborate through a 3-stage council process to answer questions.
+-< we successfully merged all major points raised in the prompts:
+
+- Interoperability
+
+- Integration
+
+- Scalability
+
+- Reusability
+
+-Flexibility
+
+- Security
+
+- Collaboration
+
+- User experience
 
 
 ## Table of Contents
