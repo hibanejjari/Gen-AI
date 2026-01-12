@@ -236,12 +236,13 @@ llm-council/
 │   └── index.html               # Web UI
 │
 
-
+```
 
 ---
 
-## Team Responsibilities
 
+## Team Responsibilities
+```
 | Role      | Team Member | Machine  | Services Running                                    | Responsibility                                                                                               |
 | --------- | ----------- | -------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Student 1 | Cyprien     | Laptop A | Council Node (Llama Analyst)                        | Runs a council LLM, participates in Stage 1 and Stage 2                                                      |
@@ -250,6 +251,7 @@ llm-council/
 | Student 4 | Hiba        | Laptop D | Council Node (Qwen Small) + Orchestrator + Chairman | Central coordination, runs the orchestrator (Stage 0), runs a council node, and hosts the Chairman (Stage 3) |
 | Student 5 | Wendy       | Laptop E | Council Node (Qwen Analyst)                         | Runs a council LLM, participates in Stage 1 and Stage 2                                                      |
 
+```
 
 
 
