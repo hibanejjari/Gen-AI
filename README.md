@@ -1,8 +1,8 @@
-# 🎓 LLM Council - Local Distributed Deployment
+# LLM Council - Local Distributed Deployment
 
 A distributed system where multiple local LLMs collaborate through a 3-stage council process to answer questions.
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
 2. [Requirements Compliance](#requirements-compliance)
@@ -15,7 +15,7 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 ```
 LLM Council (5 people, distributed with Tailscale)
 
@@ -28,17 +28,16 @@ LEGEND
 │ PC: HIBA (Orchestrator + UI + Chairman + one council node)                   │
 │ WHY THIS PC:                                                                 │
 │ - Central entry point (frontend + orchestrator)                              │
-│ - Runs Chairman (must be separate service)                                   │
-│ - Can host an extra council node if needed                                   │
+│ - Runs Chairman                                  │
+│ - Hosts an extra council node                                  │
 │ RUNS:                                                                        │
-│  1) frontend/index.html                                                      │
-│     WHY: user submits question + sees Stage1/Stage2/Stage3 outputs           │
+│  1) frontend/index.html                                                      │        │
 │  2) orchestrator/main.py  (port 8080)                                        │
-│     WHY: coordinates workflow, calls all nodes, health checks, aggregates    │
+│     coordinates workflow, calls all nodes, health checks, aggregates    │
 │  3) chairman/main.py      (port 9000)                                        │
-│     WHY: synthesizes final answer only (no Stage 1 opinions)                 │
-│  4) council node (optional) (example port 5002)                              │
-│     WHY: adds diversity + meets multi-LLM requirement if needed              │
+│     synthesizes final answer only           │
+│  4) council node ( extra : port 5002)                              │
+│     adds diversity            │
 └───────────────┬──────────────────────────────────────────────────────────────┘
                 │  REST calls (Tailscale network)
                 │  Stage 1: POST /opinion  → collect answers
