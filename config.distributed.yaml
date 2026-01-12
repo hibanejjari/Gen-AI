@@ -1,0 +1,67 @@
+# LLM Council Configuration - DISTRIBUTED DEPLOYMENT
+# ===================================================
+# This config is for multi-machine LAN deployment
+# 
+# INSTRUCTIONS:
+# 1. Copy this file to config.yaml
+# 2. Replace IP addresses with actual machine IPs
+# 3. Ensure all machines are on the same network
+# 4. Each machine pulls their assigned model
+#
+# MODEL ASSIGNMENTS:
+#   Laptop B (Council 1): ollama pull llama3.2:1b
+#   Laptop C (Council 2): ollama pull qwen2:1.5b
+#   Laptop D (Council 3): ollama pull phi3:mini
+#   Laptop E (Chairman):  ollama pull llama3.2:3b
+
+orchestrator:
+  host: "0.0.0.0"     # IMPORTANT: Must be 0.0.0.0 for LAN access
+  port: 8080
+
+# Council member nodes - DIFFERENT MODELS
+council_nodes:
+  - id: "council-1"
+    name: "Llama Analyst"
+    url: "http://192.168.1.101:5001"    # << LAPTOP B IP
+    model: "llama3.2:1b"
+    priority: 1
+    enabled: true
+    
+  - id: "council-2"
+    name: "Qwen Analyst"  
+    url: "http://192.168.1.102:5001"    # << LAPTOP C IP
+    model: "qwen2:1.5b"
+    priority: 2
+    enabled: true
+    
+  - id: "council-3"
+    name: "Phi Analyst"
+    url: "http://192.168.1.103:5001"    # << LAPTOP D IP
+    model: "phi3:mini"
+    priority: 3
+    enabled: true
+
+# Chairman - bigger model for better synthesis
+chairman:
+  id: "chairman"
+  name: "Council Chairman"
+  url: "http://192.168.1.104:9000"      # << LAPTOP E IP
+  model: "llama3.2:3b"
+
+# Timeout configuration (seconds)
+# Increased for network latency + model diversity
+timeouts:
+  health_check: 10
+  opinion: 180
+  review: 120
+  synthesis: 240
+  retry_delay: 3
+  max_retries: 3
+
+# Fallback settings
+fallback:
+  min_council_members: 2    # Demo-safe: can run with 2 nodes
+  enable_local_fallback: true
+
+# Ollama API (each machine runs its own Ollama)
+ollama_url: "http://localhost:11434"

@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Council</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root{
+      --bg-primary:#0f0f1a;
+      --bg-secondary:#1a1a2e;
+      --bg-card:#16213e;
+      --accent-blue:#00d4ff;
+      --accent-purple:#7b2cbf;
+      --accent-green:#00ff88;
+      --accent-yellow:#ffd700;
+      --accent-red:#ff4757;
+      --text-primary:#ffffff;
+      --text-secondary:#a0a0a0;
+      --border-color:rgba(255,255,255,0.10);
+    }
+    body{
+      font-family:'Inter',sans-serif;
+      background:var(--bg-primary);
+      color:var(--text-primary);
+      min-height:100vh;
+    }
+
+    /* Nav */
+    .navbar{
+      background:var(--bg-secondary);
+      padding:14px 22px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid var(--border-color);
+      position:sticky;
+      top:0;
+      z-index:100;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .logo{
+      font-size:1.25rem;
+      font-weight:700;
+      letter-spacing:0.2px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .logo span{
+      background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .nav-menu{ display:flex; gap:8px; flex-wrap:wrap; }
+    .nav-btn{
+      background:transparent;
+      border:1px solid var(--border-color);
+      color:var(--text-secondary);
+      padding:9px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:0.9rem;
+      font-weight:600;
+      transition:all .2s ease;
+    }
+    .nav-btn:hover{ border-color:var(--accent-blue); color:var(--accent-blue); }
+    .nav-btn.active{
+      background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple));
+      border-color:transparent;
+      color:#fff;
+    }
+    .status-indicator{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 12px;
+      background:rgba(0,255,136,0.08);
+      border:1px solid rgba(0,255,136,0.20);
+      border-radius:999px;
+      font-size:0.85rem;
+      white-space:nowrap;
+    }
+    .status-dot{
+      width:8px; height:8px; border-radius:50%;
+      background:var(--accent-green);
+      animation:pulse 2s infinite;
+    }
+    .status-dot.offline{ background:var(--accent-red); animation:none; }
+    @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    .container{ max-width:1400px; margin:0 auto; padding:24px; }
+
+    .page{ display:none; }
+    .page.active{ display:block; animation:fadeIn .2s ease; }
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+
+    /* Home */
+    .hero{
+      text-align:center;
+      padding:44px 10px 18px;
+    }
+    .hero h1{
+      font-size:2.6rem;
+      margin-bottom:14px;
+      background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple),var(--accent-green));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .hero p{
+      font-size:1.05rem;
+      color:var(--text-secondary);
+      max-width:760px;
+      margin:0 auto;
+      line-height:1.8;
+    }
+
+    .workflow-diagram{
+      display:flex;
+      justify-content:center;
+      align-items:stretch;
+      gap:14px;
+      flex-wrap:wrap;
+      margin:26px 0 18px;
+    }
+    .workflow-step{
+      background:var(--bg-card);
+      padding:20px;
+      border-radius:16px;
+      width:300px;
+      text-align:left;
+      border:1px solid var(--border-color);
+      transition:transform .2s ease, border-color .2s ease;
+      cursor:pointer;
+    }
+    .workflow-step:hover{ transform:translateY(-3px); border-color:var(--accent-blue); }
+    .step-top{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .step-number{
+      width:38px; height:38px;
+      background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));
+      border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800;
+      color:#fff;
+    }
+    .workflow-step h3{ color:var(--accent-blue); font-size:1.05rem; }
+    .workflow-step p{ color:var(--text-secondary); font-size:.92rem; line-height:1.6; }
+
+    .nodes-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:14px;
+      margin:18px 0 22px;
+    }
+    .node-card{
+      background:var(--bg-card);
+      border-radius:14px;
+      padding:16px;
+      border:1px solid var(--border-color);
+    }
+    .node-card.healthy{ border-color:rgba(0,255,136,0.35); }
+    .node-card.unhealthy{ border-color:rgba(255,71,87,0.35); }
+    .node-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+      gap:10px;
+    }
+    .node-name{ font-weight:700; }
+    .node-status{
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:0.72rem;
+      font-weight:800;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    .node-status.online{ background:rgba(0,255,136,0.12); color:var(--accent-green); border:1px solid rgba(0,255,136,0.20); }
+    .node-status.offline{ background:rgba(255,71,87,0.12); color:var(--accent-red); border:1px solid rgba(255,71,87,0.20); }
+    .node-details{ color:var(--text-secondary); font-size:.86rem; line-height:1.5; }
+    .node-details .err{ color:var(--accent-red); margin-top:6px; }
+
+    /* Query */
+    .query-section{
+      background:var(--bg-card);
+      border-radius:16px;
+      padding:22px;
+      border:1px solid var(--border-color);
+      margin-top:10px;
+    }
+    .query-section h2{ margin-bottom:14px; font-size:1.2rem; }
+    .query-input{
+      width:100%;
+      background:var(--bg-secondary);
+      border:1px solid var(--border-color);
+      border-radius:14px;
+      padding:16px;
+      color:var(--text-primary);
+      font-size:1rem;
+      resize:vertical;
+      min-height:110px;
+      font-family:inherit;
+      line-height:1.55;
+    }
+    .query-input:focus{ outline:none; border-color:var(--accent-blue); }
+
+    .btn-group{
+      display:flex;
+      gap:12px;
+      margin-top:14px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      padding:11px 16px;
+      border-radius:12px;
+      font-size:0.98rem;
+      font-weight:800;
+      cursor:pointer;
+      transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+      border:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      user-select:none;
+    }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
+    .btn-primary{
+      background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple));
+      color:#fff;
+    }
+    .btn-primary:hover:not(:disabled){
+      transform:translateY(-2px);
+      box-shadow:0 10px 28px rgba(0,212,255,0.20);
+    }
+    .btn-secondary{
+      background:transparent;
+      border:1px solid rgba(0,212,255,0.45);
+      color:var(--accent-blue);
+    }
+    .btn-secondary:hover:not(:disabled){ transform:translateY(-2px); }
+
+    /* Stage */
+    .stage-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin:16px 0 14px;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .stage-title{ display:flex; align-items:center; gap:12px; }
+    .stage-badge{
+      background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));
+      padding:7px 10px;
+      border-radius:12px;
+      font-weight:900;
+      font-size:.85rem;
+      letter-spacing:.8px;
+    }
+
+    /* Responses */
+    .responses-container{ display:grid; gap:12px; }
+    .response-card{
+      background:var(--bg-card);
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid var(--border-color);
+    }
+    .response-header{
+      background:var(--bg-secondary);
+      padding:14px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      cursor:pointer;
+      gap:12px;
+    }
+    .response-header:hover{ background:rgba(0,212,255,0.08); }
+    .response-model{ display:flex; align-items:center; gap:12px; min-width:0; }
+    .model-icon{
+      width:38px; height:38px;
+      border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.95rem;
+      font-weight:900;
+      color:#fff;
+      flex:0 0 auto;
+    }
+    .model-icon.llama{ background:linear-gradient(135deg,#667eea,#764ba2); }
+    .model-icon.qwen{ background:linear-gradient(135deg,#f093fb,#f5576c); }
+    .model-icon.phi{ background:linear-gradient(135deg,#4facfe,#00f2fe); }
+    .model-icon.other{ background:linear-gradient(135deg,#888,#444); }
+
+    .model-info{ min-width:0; }
+    .model-info h4{
+      font-size:1rem;
+      margin-bottom:2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:700px;
+    }
+    .model-info .meta{
+      color:var(--text-secondary);
+      font-size:0.82rem;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:700px;
+    }
+    .toggle-icon{ transition:transform .2s ease; font-size:1.1rem; color:var(--text-secondary); flex:0 0 auto; }
+    .response-card.expanded .toggle-icon{ transform:rotate(180deg); }
+
+    .response-body{
+      padding:16px;
+      display:none;
+      border-top:1px solid var(--border-color);
+    }
+    .response-card.expanded .response-body{ display:block; }
+    .response-text{
+      line-height:1.8;
+      color:var(--text-secondary);
+      white-space:pre-wrap;
+    }
+    .response-meta{
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px solid var(--border-color);
+      display:flex;
+      gap:18px;
+      flex-wrap:wrap;
+      font-size:0.85rem;
+      color:var(--text-secondary);
+    }
+
+    /* Reviews */
+    .review-table-container{ overflow-x:auto; margin:14px 0; }
+    .review-table{
+      width:100%;
+      border-collapse:collapse;
+      background:var(--bg-card);
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid var(--border-color);
+    }
+    .review-table th,.review-table td{
+      padding:13px 16px;
+      text-align:left;
+      border-bottom:1px solid var(--border-color);
+      vertical-align:top;
+    }
+    .review-table th{
+      background:var(--bg-secondary);
+      font-weight:900;
+      color:var(--accent-blue);
+      text-transform:uppercase;
+      font-size:0.78rem;
+      letter-spacing:1px;
+      white-space:nowrap;
+    }
+    .review-table tr:last-child td{ border-bottom:none; }
+    .review-table tr:hover td{ background:rgba(0,212,255,0.04); }
+
+    .score-badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:0.85rem;
+      white-space:nowrap;
+      border:1px solid transparent;
+    }
+    .score-high{ background:rgba(0,255,136,0.10); color:var(--accent-green); border-color:rgba(0,255,136,0.20); }
+    .score-medium{ background:rgba(255,215,0,0.10); color:var(--accent-yellow); border-color:rgba(255,215,0,0.20); }
+    .score-low{ background:rgba(255,71,87,0.10); color:var(--accent-red); border-color:rgba(255,71,87,0.20); }
+
+    .rank-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:30px; height:30px;
+      border-radius:50%;
+      font-weight:900;
+    }
+    .rank-1{ background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; }
+    .rank-2{ background:linear-gradient(135deg,#c0c0c0,#a0a0a0); color:#000; }
+    .rank-3{ background:linear-gradient(135deg,#cd7f32,#8b4513); color:#fff; }
+
+    /* Final */
+    .final-answer-card{
+      background:linear-gradient(135deg, rgba(0,212,255,0.08), rgba(123,44,191,0.08));
+      border:2px solid rgba(0,255,136,0.50);
+      border-radius:16px;
+      padding:22px;
+      margin-top:14px;
+    }
+    .final-answer-card h2{
+      margin-bottom:12px;
+      background:linear-gradient(90deg,var(--accent-green),var(--accent-blue));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      font-size:1.35rem;
+    }
+    .final-answer-content{
+      font-size:1.05rem;
+      line-height:1.9;
+      color:var(--text-primary);
+      white-space:pre-wrap;
+    }
+
+    /* Alerts */
+    .alert{
+      padding:12px 14px;
+      border-radius:12px;
+      margin:12px 0;
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      line-height:1.5;
+      border:1px solid transparent;
+      color:var(--text-secondary);
+      background:rgba(255,255,255,0.03);
+    }
+    .alert strong{ color:var(--text-primary); }
+    .alert-warning{ border-color:rgba(255,215,0,0.25); }
+    .alert-error{ border-color:rgba(255,71,87,0.25); }
+    .alert-success{ border-color:rgba(0,255,136,0.25); }
+
+    .empty-state{
+      text-align:center;
+      padding:46px 16px;
+      color:var(--text-secondary);
+      border:1px dashed rgba(255,255,255,0.10);
+      border-radius:16px;
+      background:rgba(255,255,255,0.02);
+    }
+
+    /* Loading */
+    .loading-overlay{
+      display:none;
+      position:fixed;
+      top:0; left:0; right:0; bottom:0;
+      background:rgba(0,0,0,0.72);
+      justify-content:center;
+      align-items:center;
+      z-index:1000;
+      flex-direction:column;
+      gap:14px;
+      padding:18px;
+      text-align:center;
+    }
+    .loading-overlay.active{ display:flex; }
+    .spinner{
+      width:56px; height:56px;
+      border:4px solid rgba(255,255,255,0.12);
+      border-top-color:var(--accent-blue);
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading-text{ font-size:1.1rem; color:var(--text-primary); font-weight:800; }
+    .loading-stage{ color:var(--accent-blue); font-weight:800; }
+
+    /* Responsive */
+    @media (max-width:768px){
+      .container{ padding:14px; }
+      .hero h1{ font-size:2rem; }
+      .workflow-step{ width:100%; }
+      .model-info h4,.model-info .meta{ max-width:260px; }
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="logo"><span>LLM Council</span></div>
+    <div class="nav-menu">
+      <button class="nav-btn active" data-page="home" onclick="showPage('home')">Home</button>
+      <button class="nav-btn" data-page="stage1" onclick="showPage('stage1')">Stage 1</button>
+      <button class="nav-btn" data-page="stage2" onclick="showPage('stage2')">Stage 2</button>
+      <button class="nav-btn" data-page="stage3" onclick="showPage('stage3')">Stage 3</button>
+    </div>
+    <div class="status-indicator">
+      <span class="status-dot" id="globalStatus"></span>
+      <span id="statusText">Checking...</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- HOME -->
+    <div id="home" class="page active">
+      <div class="hero">
+        <h1>Distributed Review Workflow</h1>
+        <p>
+          Multiple models generate independent answers, then review (and score) anonymized responses.
+          A chairman synthesizes a final answer.
+        </p>
+      </div>
+
+      <div class="workflow-diagram">
+        <div class="workflow-step" onclick="showPage('stage1')">
+          <div class="step-top">
+            <div class="step-number">1</div>
+            <h3>Opinions</h3>
+          </div>
+          <p>Each council member answers independently.</p>
+        </div>
+
+        <div class="workflow-step" onclick="showPage('stage2')">
+          <div class="step-top">
+            <div class="step-number">2</div>
+            <h3>Reviews</h3>
+          </div>
+          <p>Each model scores and ranks anonymized responses.</p>
+        </div>
+
+        <div class="workflow-step" onclick="showPage('stage3')">
+          <div class="step-top">
+            <div class="step-number">3</div>
+            <h3>Synthesis</h3>
+          </div>
+          <p>The chairman produces the final answer.</p>
+        </div>
+      </div>
+
+      <h2 style="text-align:center; margin:18px 0 10px;">System Status</h2>
+      <div class="nodes-grid" id="nodesGrid"></div>
+
+      <div class="query-section">
+        <h2>Main question</h2>
+        <textarea id="homeQuestion" class="query-input" placeholder="Enter your question...">What is an API and why is it important in software development?</textarea>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="runAllBtn" onclick="runFullWorkflowFromHome()">
+            Run full workflow
+          </button>
+          <button class="btn btn-secondary" onclick="showPage('stage1')">
+            Run step-by-step
+          </button>
+        </div>
+        <div class="alert alert-warning" id="homeHint" style="display:none; margin-top:14px;">
+          <div>
+            <strong>Note:</strong> Stage pages run only their stage when the orchestrator exposes stage endpoints.
+            If not available, the UI will fall back to calling <code>/query</code> and will only display the relevant stage results.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGE 1 -->
+    <div id="stage1" class="page">
+      <div class="stage-header">
+        <div class="stage-title">
+          <span class="stage-badge">STAGE 1</span>
+          <h1>Opinions</h1>
+        </div>
+      </div>
+
+      <div class="query-section">
+        <h2>Question</h2>
+        <textarea id="stage1Question" class="query-input" placeholder="Enter your question..."></textarea>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="stage1Btn" onclick="executeStage1Only()">
+            Run Stage 1 only
+          </button>
+        </div>
+      </div>
+
+      <h2 style="margin:16px 0 10px;">Responses</h2>
+      <div class="responses-container" id="stage1Responses">
+        <div class="empty-state">
+          <h3>No responses yet</h3>
+          <p>Run Stage 1 to fetch opinions.</p>
+        </div>
+      </div>
+
+      <div class="btn-group" style="justify-content:center; margin-top:16px;">
+        <button class="btn btn-secondary" id="toStage2Btn" onclick="showPage('stage2')" disabled>
+          Next: Stage 2
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 2 -->
+    <div id="stage2" class="page">
+      <div class="stage-header">
+        <div class="stage-title">
+          <span class="stage-badge">STAGE 2</span>
+          <h1>Reviews</h1>
+        </div>
+      </div>
+
+      <div id="stage2Alert" class="alert alert-warning">
+        <div>
+          <strong>Missing data:</strong> Run Stage 1 first to generate opinions for review.
+        </div>
+      </div>
+
+      <div class="query-section">
+        <h2>Review results</h2>
+        <p style="color:var(--text-secondary); line-height:1.7;">
+          Scores are computed from reviewers’ JSON outputs:
+          <strong>accuracy</strong> (0–10) and <strong>insight</strong> (0–10).
+          This page also shows the model mapped to each anonymized response label (A, B, C, ...).
+        </p>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="stage2Btn" onclick="executeStage2Only()" disabled>
+            Run Stage 2 only
+          </button>
+        </div>
+      </div>
+
+      <div id="stage2Results">
+        <div class="empty-state">
+          <h3>No reviews yet</h3>
+          <p>Run Stage 2 to compute peer scores.</p>
+        </div>
+      </div>
+
+      <div class="btn-group" style="justify-content:center; margin-top:16px;">
+        <button class="btn btn-secondary" onclick="showPage('stage1')">Back</button>
+        <button class="btn btn-secondary" id="toStage3Btn" onclick="showPage('stage3')" disabled>
+          Next: Stage 3
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 3 -->
+    <div id="stage3" class="page">
+      <div class="stage-header">
+        <div class="stage-title">
+          <span class="stage-badge">STAGE 3</span>
+          <h1>Synthesis</h1>
+        </div>
+      </div>
+
+      <div id="stage3Alert" class="alert alert-warning">
+        <div>
+          <strong>Missing data:</strong> Run Stage 1 and Stage 2 before synthesis.
+        </div>
+      </div>
+
+      <div class="query-section">
+        <h2>Final answer</h2>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="stage3Btn" onclick="executeStage3Only()" disabled>
+            Run Stage 3 only
+          </button>
+        </div>
+      </div>
+
+      <div id="stage3Results">
+        <div class="empty-state">
+          <h3>No final answer yet</h3>
+          <p>Run Stage 3 to request chairman synthesis.</p>
+        </div>
+      </div>
+
+      <div class="btn-group" style="justify-content:center; margin-top:16px;">
+        <button class="btn btn-secondary" onclick="showPage('stage2')">Back</button>
+        <button class="btn btn-secondary" onclick="resetAll()">New question</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+    <div class="loading-stage" id="loadingStage"></div>
+  </div>
+
+  <script>
+    /**
+     * Endpoints strategy:
+     * - Prefer stage endpoints if your orchestrator exposes them:
+     *     POST /stage1   {question}
+     *     POST /stage2   {question, opinions}     or {question, anon_opinions} depending on backend
+     *     POST /stage3   {question, opinions, reviews}
+     *
+     * - Fallback: POST /query (full workflow), but ONLY display the stage requested.
+     *
+     * This keeps the frontend compatible with your "stage pages run only their stage" requirement,
+     * while not breaking if the backend still only has /query.
+     */
+    const API_BASE = ""; // same origin
+    const ENDPOINTS = {
+      full: `${API_BASE}/query`,
+      stage1: `${API_BASE}/stage1`,
+      stage2: `${API_BASE}/stage2`,
+      stage3: `${API_BASE}/stage3`,
+      health: `${API_BASE}/health`
+    };
+
+    let systemHealth = null;
+
+    // Data cache across pages
+    let workflowData = {
+      question: "",
+      opinions: null,   // from orchestrator
+      reviews: null,    // from orchestrator
+      final_answer: null,
+      timing: null,
+      nodes_used: null
+    };
+
+    // Label mappings for Stage 2 (must match backend anonymization order!)
+    // We build it using insertion order of opinions as returned by the backend.
+    let labelToModel = {};
+    let labelToNodeName = {};
+    let reviewerScoresByLabel = {};
+
+    const LABELS = ["A","B","C","D","E","F","G","H"];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Seed stage question from home question
+      document.getElementById("stage1Question").value = document.getElementById("homeQuestion").value;
+
+      checkHealth();
+      setInterval(checkHealth, 15000);
+
+      // show hint once
+      document.getElementById("homeHint").style.display = "flex";
+    });
+
+    function showPage(pageId){
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+
+      document.getElementById(pageId).classList.add("active");
+      const btn = document.querySelector(`.nav-btn[data-page="${pageId}"]`);
+      if (btn) btn.classList.add("active");
+
+      syncQuestionToAll();
+      updateUIState();
+    }
+
+    function syncQuestionToAll(){
+      const q = document.getElementById("homeQuestion").value;
+      document.getElementById("stage1Question").value = q;
+    }
+
+    function showLoading(text, stage){
+      document.getElementById("loadingOverlay").classList.add("active");
+      document.getElementById("loadingText").textContent = text || "Processing...";
+      document.getElementById("loadingStage").textContent = stage || "";
+    }
+    function hideLoading(){
+      document.getElementById("loadingOverlay").classList.remove("active");
+    }
+
+    async function checkHealth(){
+      try{
+        const r = await fetch(ENDPOINTS.health);
+        systemHealth = await r.json();
+      }catch(e){
+        systemHealth = null;
+      }
+      updateStatusUI();
+      updateUIState();
+    }
+
+    function updateStatusUI(){
+      const dot = document.getElementById("globalStatus");
+      const text = document.getElementById("statusText");
+      const grid = document.getElementById("nodesGrid");
+
+      if (!systemHealth){
+        dot.className = "status-dot offline";
+        text.textContent = "Offline";
+        grid.innerHTML = `<div class="alert alert-error"><div><strong>Cannot connect</strong> to orchestrator. Check services and network.</div></div>`;
+        return;
+      }
+
+      dot.className = systemHealth.can_process ? "status-dot" : "status-dot offline";
+      text.textContent = systemHealth.can_process ? `${systemHealth.healthy_nodes} nodes online` : "Not ready";
+
+      let html = "";
+      (systemHealth.council_nodes || []).forEach(node => {
+        html += `
+          <div class="node-card ${node.healthy ? "healthy" : "unhealthy"}">
+            <div class="node-header">
+              <span class="node-name">${escapeHtml(node.name || node.id)}</span>
+              <span class="node-status ${node.healthy ? "online" : "offline"}">
+                ${node.healthy ? "Online" : "Offline"}
+              </span>
+            </div>
+            <div class="node-details">
+              <div>Model: <strong>${escapeHtml(node.model || "")}</strong></div>
+              <div>${escapeHtml(node.url || "")}</div>
+              ${node.error ? `<div class="err">${escapeHtml(node.error)}</div>` : ``}
+            </div>
+          </div>
+        `;
+      });
+
+      if (systemHealth.chairman){
+        const ch = systemHealth.chairman;
+        html += `
+          <div class="node-card ${ch.healthy ? "healthy" : "unhealthy"}">
+            <div class="node-header">
+              <span class="node-name">Chairman</span>
+              <span class="node-status ${ch.healthy ? "online" : "offline"}">
+                ${ch.healthy ? "Online" : "Offline"}
+              </span>
+            </div>
+            <div class="node-details">
+              <div>Model: <strong>${escapeHtml(ch.model || "")}</strong></div>
+              <div>${escapeHtml(ch.url || "")}</div>
+              ${ch.error ? `<div class="err">${escapeHtml(ch.error)}</div>` : ``}
+            </div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function updateUIState(){
+      const hasOpinions = !!(workflowData.opinions && Object.keys(workflowData.opinions).length);
+      const hasReviews  = !!(workflowData.reviews && Object.keys(workflowData.reviews).length);
+      const hasFinal    = !!workflowData.final_answer;
+
+      // Stage navigation buttons
+      document.getElementById("toStage2Btn").disabled = !hasOpinions;
+      document.getElementById("toStage3Btn").disabled = !hasReviews;
+
+      // Stage run buttons
+      document.getElementById("stage2Btn").disabled = !hasOpinions;
+      document.getElementById("stage3Btn").disabled = !hasReviews;
+
+      // Alerts visibility
+      document.getElementById("stage2Alert").style.display = hasOpinions ? "none" : "flex";
+      document.getElementById("stage3Alert").style.display = hasFinal ? "none" : "flex";
+
+      // Home run button
+      document.getElementById("runAllBtn").disabled = !(systemHealth && systemHealth.can_process);
+      document.getElementById("stage1Btn").disabled = !(systemHealth && systemHealth.can_process);
+    }
+
+    function resetAll(){
+      workflowData = { question:"", opinions:null, reviews:null, final_answer:null, timing:null, nodes_used:null };
+      labelToModel = {};
+      labelToNodeName = {};
+      reviewerScoresByLabel = {};
+      renderStage1(null);
+      renderStage2({reviews:null});
+      renderStage3({final_answer:null});
+      updateUIState();
+      showPage("home");
+    }
+
+    // --------- MAIN: FULL WORKFLOW (HOME) ---------
+    async function runFullWorkflowFromHome(){
+      const q = document.getElementById("homeQuestion").value.trim();
+      if (!q) return alert("Please enter a question.");
+      syncQuestionToAll();
+
+      showLoading("Running full workflow...", "Opinions → Reviews → Synthesis");
+      try{
+        const r = await fetch(ENDPOINTS.full, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ question: q })
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+
+        workflowData.question = q;
+        workflowData.opinions = data.opinions || null;
+        workflowData.reviews = data.reviews || null;
+        workflowData.final_answer = data.final_answer || null;
+        workflowData.timing = data.timing || null;
+        workflowData.nodes_used = data.nodes_used || null;
+
+        buildLabelMapsFromOpinions(workflowData.opinions);
+
+        renderStage1(workflowData.opinions);
+        renderStage2({reviews: workflowData.reviews});
+        renderStage3({final_answer: workflowData.final_answer, timing: workflowData.timing, opinions: workflowData.opinions});
+
+        updateUIState();
+        showPage("stage3");
+      }catch(e){
+        alert("Error: " + e.message);
+      }finally{
+        hideLoading();
+      }
+    }
+
+    // --------- STAGE 1 ONLY ---------
+    async function executeStage1Only(){
+      const q = document.getElementById("stage1Question").value.trim();
+      if (!q) return alert("Please enter a question.");
+      document.getElementById("homeQuestion").value = q;
+
+      showLoading("Running Stage 1...", "Collecting opinions");
+      document.getElementById("stage1Btn").disabled = true;
+
+      try{
+        // Try stage endpoint first, fallback to /query
+        let data = await tryPostJson(ENDPOINTS.stage1, { question: q });
+        if (!data) {
+          const full = await mustPostJson(ENDPOINTS.full, { question: q });
+          data = { opinions: full.opinions, nodes_used: full.nodes_used }; // only keep stage 1 data
+        }
+
+        workflowData.question = q;
+        workflowData.opinions = data.opinions || null;
+        workflowData.nodes_used = data.nodes_used || null;
+
+        // Clear downstream (since we only ran Stage 1)
+        workflowData.reviews = null;
+        workflowData.final_answer = null;
+        workflowData.timing = null;
+
+        buildLabelMapsFromOpinions(workflowData.opinions);
+        renderStage1(workflowData.opinions);
+
+        // Clear stage 2/3 UI since they’re not run yet
+        renderStage2({reviews:null});
+        renderStage3({final_answer:null});
+
+        updateUIState();
+      }catch(e){
+        alert("Error: " + e.message);
+      }finally{
+        hideLoading();
+        document.getElementById("stage1Btn").disabled = false;
+      }
+    }
+
+    // --------- STAGE 2 ONLY ---------
+    async function executeStage2Only(){
+      if (!workflowData.opinions) return;
+
+      showLoading("Running Stage 2...", "Collecting reviews and scores");
+      document.getElementById("stage2Btn").disabled = true;
+
+      try{
+        // Try stage endpoint first, fallback to /query
+        let data = await tryPostJson(ENDPOINTS.stage2, {
+          question: workflowData.question,
+          opinions: workflowData.opinions
+        });
+
+        if (!data) {
+          const full = await mustPostJson(ENDPOINTS.full, { question: workflowData.question });
+          data = { reviews: full.reviews, opinions: full.opinions, nodes_used: full.nodes_used };
+          // Keep opinions consistent with backend ordering if it changed
+          workflowData.opinions = data.opinions || workflowData.opinions;
+          workflowData.nodes_used = data.nodes_used || workflowData.nodes_used;
+          buildLabelMapsFromOpinions(workflowData.opinions);
+          renderStage1(workflowData.opinions);
+        }
+
+        workflowData.reviews = data.reviews || null;
+
+        // Clear stage 3 (since we only ran Stage 2)
+        workflowData.final_answer = null;
+        workflowData.timing = null;
+
+        renderStage2({reviews: workflowData.reviews});
+        renderStage3({final_answer:null});
+
+        updateUIState();
+      }catch(e){
+        alert("Error: " + e.message);
+      }finally{
+        hideLoading();
+        document.getElementById("stage2Btn").disabled = false;
+      }
+    }
+
+    // --------- STAGE 3 ONLY ---------
+    async function executeStage3Only(){
+      if (!workflowData.opinions || !workflowData.reviews) return;
+
+      showLoading("Running Stage 3...", "Requesting chairman synthesis");
+      document.getElementById("stage3Btn").disabled = true;
+
+      try{
+        // Try stage endpoint first, fallback to /query
+        let data = await tryPostJson(ENDPOINTS.stage3, {
+          question: workflowData.question,
+          opinions: workflowData.opinions,
+          reviews: workflowData.reviews
+        });
+
+        if (!data) {
+          const full = await mustPostJson(ENDPOINTS.full, { question: workflowData.question });
+          data = { final_answer: full.final_answer, timing: full.timing, opinions: full.opinions, reviews: full.reviews };
+          // Keep everything consistent if backend differs
+          workflowData.opinions = data.opinions || workflowData.opinions;
+          workflowData.reviews = data.reviews || workflowData.reviews;
+          buildLabelMapsFromOpinions(workflowData.opinions);
+          renderStage1(workflowData.opinions);
+          renderStage2({reviews: workflowData.reviews});
+        }
+
+        workflowData.final_answer = data.final_answer || null;
+        workflowData.timing = data.timing || null;
+
+        renderStage3({final_answer: workflowData.final_answer, timing: workflowData.timing, opinions: workflowData.opinions});
+        updateUIState();
+      }catch(e){
+        alert("Error: " + e.message);
+      }finally{
+        hideLoading();
+        document.getElementById("stage3Btn").disabled = false;
+      }
+    }
+
+    // --------- RENDERING ---------
+    function buildLabelMapsFromOpinions(opinions){
+      labelToModel = {};
+      labelToNodeName = {};
+      if (!opinions) return;
+
+      // IMPORTANT:
+      // The backend anonymizer uses opinions.items() insertion order.
+      // JS Object.entries preserves insertion order of string keys as inserted.
+      // So we DO NOT sort keys here.
+      const entries = Object.entries(opinions); // insertion order
+      entries.forEach(([nodeId, op], idx) => {
+        if (idx >= LABELS.length) return;
+        const label = LABELS[idx];
+        labelToModel[label] = op.model || "Unknown";
+        labelToNodeName[label] = op.node_name || nodeId;
+      });
+    }
+
+    function renderStage1(opinions){
+      const container = document.getElementById("stage1Responses");
+      if (!opinions || Object.keys(opinions).length === 0){
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>No responses</h3>
+            <p>Run Stage 1 to fetch opinions.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const icons = (model) => {
+        const m = (model || "").toLowerCase();
+        if (m.includes("llama")) return { icon:"L", cls:"llama" };
+        if (m.includes("qwen")) return { icon:"Q", cls:"qwen" };
+        if (m.includes("phi")) return { icon:"P", cls:"phi" };
+        return { icon:"M", cls:"other" };
+      };
+
+      let html = "";
+      const entries = Object.entries(opinions); // insertion order
+      entries.forEach(([id, op], i) => {
+        const ic = icons(op.model);
+        html += `
+          <div class="response-card ${i===0 ? "expanded" : ""}" onclick="toggleCard(event, this)">
+            <div class="response-header">
+              <div class="response-model">
+                <div class="model-icon ${ic.cls}">${ic.icon}</div>
+                <div class="model-info">
+                  <h4>${escapeHtml(op.node_name || id)}</h4>
+                  <div class="meta">${escapeHtml(op.model || "")}</div>
+                </div>
+              </div>
+              <span class="toggle-icon">▼</span>
+            </div>
+            <div class="response-body">
+              <div class="response-text">${escapeHtml(op.answer || "")}</div>
+              <div class="response-meta">
+                <span>Time: ${formatSeconds(op.generation_time_ms)}</span>
+                <span>Words: ${(op.answer || "").trim().split(/\s+/).filter(Boolean).length}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function toggleCard(evt, el){
+      // Prevent toggling when clicking inside selectable text areas (optional)
+      el.classList.toggle("expanded");
+    }
+
+    function renderStage2(data){
+      const container = document.getElementById("stage2Results");
+      const reviews = data && data.reviews ? data.reviews : null;
+
+      if (!reviews || Object.keys(reviews).length === 0){
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>No reviews</h3>
+            <p>Run Stage 2 to compute peer scores.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Aggregate scores and preserve reviewer details per label
+      const scoresByLabel = {};  // {A: {accuracy:[], insight:[]}}
+      const ranksByLabel = {};   // {A: [1,2,3...]}
+      reviewerScoresByLabel = {}; // {A: [{reviewerModel, accuracy, insight}]}
+
+      Object.entries(reviews).forEach(([reviewerId, rd]) => {
+        const rev = (rd && rd.review) ? rd.review : {};
+        const reviewerModel = rd.model || reviewerId;
+
+        if (rev && rev.scores){
+          Object.entries(rev.scores).forEach(([lbl, s]) => {
+            // Accept only known labels (A..H)
+            if (!LABELS.includes(lbl)) return;
+
+            const acc = clampScore(s && s.accuracy);
+            const ins = clampScore(s && s.insight);
+
+            if (!scoresByLabel[lbl]) scoresByLabel[lbl] = { accuracy: [], insight: [] };
+            // Only include if number; do NOT coerce missing to 0 (fixes a common scoring artifact)
+            if (Number.isFinite(acc)) scoresByLabel[lbl].accuracy.push(acc);
+            if (Number.isFinite(ins)) scoresByLabel[lbl].insight.push(ins);
+
+            if (!reviewerScoresByLabel[lbl]) reviewerScoresByLabel[lbl] = [];
+            reviewerScoresByLabel[lbl].push({
+              reviewerModel,
+              accuracy: Number.isFinite(acc) ? acc : null,
+              insight: Number.isFinite(ins) ? ins : null
+            });
+          });
+        }
+
+        if (rev && Array.isArray(rev.ranking)){
+          rev.ranking.forEach((lbl, idx) => {
+            if (!LABELS.includes(lbl)) return;
+            if (!ranksByLabel[lbl]) ranksByLabel[lbl] = [];
+            ranksByLabel[lbl].push(idx + 1);
+          });
+        }
+      });
+
+      // Build rows (for any label that appears)
+      let rows = Object.keys(scoresByLabel).map(lbl => {
+        const accArr = scoresByLabel[lbl].accuracy || [];
+        const insArr = scoresByLabel[lbl].insight || [];
+        const avgAcc = accArr.length ? (accArr.reduce((a,b)=>a+b,0)/accArr.length) : NaN;
+        const avgIns = insArr.length ? (insArr.reduce((a,b)=>a+b,0)/insArr.length) : NaN;
+
+        const avgRank = ranksByLabel[lbl] && ranksByLabel[lbl].length
+          ? (ranksByLabel[lbl].reduce((a,b)=>a+b,0)/ranksByLabel[lbl].length)
+          : NaN;
+
+        const cappedAcc = Number.isFinite(avgAcc) ? Math.min(avgAcc, 10) : NaN;
+        const cappedIns = Number.isFinite(avgIns) ? Math.min(avgIns, 10) : NaN;
+        const total = (Number.isFinite(cappedAcc) && Number.isFinite(cappedIns)) ? (cappedAcc + cappedIns) / 2 : NaN;
+
+        return {
+          lbl,
+          model: labelToModel[lbl] || "Unknown",
+          author: labelToNodeName[lbl] || "",
+          avgAcc: cappedAcc,
+          avgIns: cappedIns,
+          total,
+          avgRank
+        };
+      }).sort((a,b) => (b.total||-1) - (a.total||-1));
+
+      // Table
+      let html = `
+        <div class="review-table-container">
+          <table class="review-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Response</th>
+                <th>Model</th>
+                <th>Accuracy</th>
+                <th>Insight</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      rows.forEach((r, i) => {
+        const rc = i===0 ? "rank-1" : i===1 ? "rank-2" : "rank-3";
+        const accClass = scoreClass(r.avgAcc);
+        const insClass = scoreClass(r.avgIns);
+        const totClass = scoreClass(r.total);
+
+        const detailsId = `details-${r.lbl}`;
+
+        // reviewer details
+        const detailBlocks = (reviewerScoresByLabel[r.lbl] || []).map(entry => {
+          const a = entry.accuracy;
+          const s = entry.insight;
+          const aTxt = (a === null) ? "N/A" : `${a.toFixed(1)}/10`;
+          const sTxt = (s === null) ? "N/A" : `${s.toFixed(1)}/10`;
+          return `
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); padding:10px 12px; border-radius:10px; min-width:220px;">
+              <div style="font-weight:900; color:var(--accent-blue); margin-bottom:4px;">${escapeHtml(entry.reviewerModel)}</div>
+              <div style="color:var(--text-secondary); font-size:0.9rem;">Accuracy: <strong style="color:var(--text-primary)">${aTxt}</strong></div>
+              <div style="color:var(--text-secondary); font-size:0.9rem;">Insight: <strong style="color:var(--text-primary)">${sTxt}</strong></div>
+            </div>
+          `;
+        }).join("");
+
+        html += `
+          <tr style="cursor:pointer;" onclick="toggleDetails('${detailsId}')">
+            <td><span class="rank-badge ${rc}">${i+1}</span></td>
+            <td><strong>${r.lbl}</strong></td>
+            <td>${escapeHtml(r.model)}</td>
+            <td><span class="score-badge ${accClass}">${fmtScore(r.avgAcc)}</span></td>
+            <td><span class="score-badge ${insClass}">${fmtScore(r.avgIns)}</span></td>
+            <td><span class="score-badge ${totClass}">${fmtScore(r.total)}</span></td>
+          </tr>
+          <tr id="${detailsId}" style="display:none; background:rgba(255,255,255,0.02);">
+            <td colspan="6">
+              <div style="padding:12px 4px;">
+                <div style="margin-bottom:10px;">
+                  <strong>Response ${r.lbl}</strong>
+                  <span style="color:var(--text-secondary);"> • model: </span>
+                  <span style="color:var(--accent-blue); font-weight:900;">${escapeHtml(r.model)}</span>
+                </div>
+                <div style="color:var(--text-secondary); margin-bottom:10px;">
+                  Reviewer scores (who gave what):
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                  ${detailBlocks || `<div style="color:var(--text-secondary);">No reviewer details available.</div>`}
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+        <div class="alert alert-warning">
+          <div>
+            <strong>Scoring note:</strong> This UI caps scores to 10 and ignores missing values instead of treating them as 0.
+            If you updated the backend to include each model’s self-score anonymously, it will appear here automatically.
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function toggleDetails(id){
+      const row = document.getElementById(id);
+      if (!row) return;
+      row.style.display = (row.style.display === "none" || row.style.display === "") ? "table-row" : "none";
+    }
+
+    function renderStage3(data){
+      const container = document.getElementById("stage3Results");
+      if (!data || !data.final_answer){
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>No final answer</h3>
+            <p>Run Stage 3 to request synthesis.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const t = data.timing || {};
+      container.innerHTML = `
+        <div class="final-answer-card">
+          <h2>Final answer</h2>
+          <div class="final-answer-content">${escapeHtml(data.final_answer)}</div>
+          <div class="response-meta" style="margin-top:14px;">
+            <span>Stage 1: ${formatSeconds(t.stage_1_ms)}</span>
+            <span>Stage 2: ${formatSeconds(t.stage_2_ms)}</span>
+            <span>Stage 3: ${formatSeconds(t.stage_3_ms)}</span>
+            <span style="color:var(--accent-green); font-weight:900;">Total: ${formatSeconds(t.total_ms)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // --------- UTIL ---------
+    function escapeHtml(text){
+      if (text === null || text === undefined) return "";
+      const div = document.createElement("div");
+      div.textContent = String(text);
+      return div.innerHTML.replace(/\n/g, "<br>");
+    }
+
+    function formatSeconds(ms){
+      if (!Number.isFinite(ms)) return "—";
+      return `${(ms/1000).toFixed(1)}s`;
+    }
+
+    function clampScore(v){
+      const n = Number(v);
+      if (!Number.isFinite(n)) return NaN;
+      // hard cap to [0,10]
+      return Math.max(0, Math.min(10, n));
+    }
+
+    function scoreClass(v){
+      if (!Number.isFinite(v)) return "score-low";
+      if (v >= 7) return "score-high";
+      if (v >= 5) return "score-medium";
+      return "score-low";
+    }
+
+    function fmtScore(v){
+      if (!Number.isFinite(v)) return "N/A";
+      return `${v.toFixed(1)}/10`;
+    }
+
+    async function tryPostJson(url, payload){
+      try{
+        const r = await fetch(url, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        // If endpoint doesn't exist, fallback gracefully
+        if (r.status === 404 || r.status === 405) return null;
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.json();
+      }catch(e){
+        // If we got a network error, also fallback to /query
+        return null;
+      }
+    }
+
+    async function mustPostJson(url, payload){
+      const r = await fetch(url, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    }
+  </script>
+</body>
+</html>
+

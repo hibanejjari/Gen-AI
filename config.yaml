@@ -1,0 +1,60 @@
+orchestrator:
+  host: "0.0.0.0"
+  port: 8080
+
+council_nodes:
+  - id: "council-1"
+    name: "Llama Analyst (cyprien)"
+    url: "http://100.104.27.110:5001"
+    model: "llama3.2:1b"
+    priority: 1
+    enabled: true
+
+  - id: "council-2"
+    name: "Phi Analyst (lisa-vivo15)"
+    url: "http://100.76.11.103:5001"
+    model: "phi3:mini"
+    priority: 2
+    enabled: true
+
+  - id: "council-3"
+    name: "Smollm Analyst (neil)"
+    url: "http://100.94.246.28:5001"
+    model: "smollm2:135m"
+    priority: 3
+    enabled: true
+
+  - id: "council-4"
+    name: "Qwen Small Analyst (hiba)"
+    url: "http://100.66.134.110:5001"
+    model: "qwen2.5:0.5b"
+    priority: 4
+    enabled: true
+
+  - id: "council-5"
+    name: "Qwen Analyst (wendy)"
+    url: "http://100.112.48.63:5001"
+    model: "qwen2:1.5b"
+    priority: 5
+    enabled: true
+
+chairman:
+  id: "chairman"
+  name: "Council Chairman (hiba)"
+  url: "http://localhost:9000"
+  model: "llama3.2:3b"
+
+timeouts:
+  health_check: 10
+  opinion: 180
+  review: 120
+  synthesis: 240
+  retry_delay: 3
+  max_retries: 3
+
+fallback:
+  min_council_members: 2
+  enable_local_fallback: true
+  local_model: "llama3.2:1b"
+
+ollama_url: "http://localhost:11434"
