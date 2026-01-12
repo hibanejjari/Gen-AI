@@ -36,7 +36,7 @@ LEGEND
 │     coordinates workflow, calls all nodes, health checks, aggregates    │
 │  3) chairman/main.py      (port 9000)                                        │
 │     synthesizes final answer only           │
-│  4) council node ( extra : port 5002)                              │
+│  4) council node 4 ( extra : port 5002)                              │
 │     adds diversity            │
 └───────────────┬──────────────────────────────────────────────────────────────┘
                 │  REST calls (Tailscale network)
@@ -44,45 +44,27 @@ LEGEND
                 │  Stage 2: POST /review   → collect anonymized scoring
                 │  Stage 3: POST /synthesize → final answer
                 ▼
+ all on ollama :
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: CYPRIEN (Council Node 1)                                                 │
-│ WHY THIS PC:                                                                 │
-│ - Hosts one independent council model on a separate machine                  │
-│ RUNS:                                                                        │
-│  1) Ollama (local inference)                                                 │
-│     WHY: runs the model locally (no cloud API)                               │
-│  2) council_node/main.py  (port 5001)                                        │
-│     WHY: exposes /health /opinion /review endpoints for orchestrator         │
+│ PC: CYPRIEN (Council Node 1)                                                 │)                               │
+│    council_node/main.py  (port 5001)                                        │
+│    exposes /health /opinion /review endpoints for orchestrator         │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: LISA-VIVO15 (Council Node 2)                                             │
-│ WHY THIS PC:                                                                 │
-│ - Adds a different model + reasoning style on another machine                │
-│ RUNS:                                                                        │
-│  1) Ollama                                                                    │
-│  2) council_node/main.py  (port 5001)                                        │
-│     WHY: produces opinions + reviews other answers anonymously               │
+│ PC: LISA-VIVO15 (Council Node 2)                                             │                                                            │
+│ council_node/main.py  (port 5001)                                            │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ PC: NEIL (Council Node 3)                                                    │
-│ WHY THIS PC:                                                                 │
-│ - Adds a lightweight model for diversity + speed                             │
-│ RUNS:                                                                        │
-│  1) Ollama                                                                    │
-│  2) council_node/main.py  (port 5001)                                        │
-│     WHY: produces opinions + provides peer review scores                     │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: WENDY (Council Node 4/5 depending on config)                             │
-│ WHY THIS PC:                                                                 │
-│ - Adds another independent council model on a separate machine               │
-│ RUNS:                                                                        │
-│  1) Ollama                                                                    │
-│  2) council_node/main.py  (port 5001 OR 5002 depending on her setup)         │
-│     WHY: produces opinions + reviews other answers anonymously               │
+│ PC: WENDY (Council Node 5                                                    │
+│                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 
@@ -92,62 +74,14 @@ HOW A FULL RUN HAPPENS (end-to-end)
 3) Stage 1: Orchestrator calls every healthy council node:
    - CYPRIEN /opinion
    - LISA   /opinion
-   - NEIL   /opinion
+   - NEIL   /opinion 
+   - HIBA   /opinion
    - WENDY  /opinion
-   - (optional HIBA council node) /opinion
 4) Stage 2: Orchestrator anonymizes answers (A,B,C,...) then calls /review on each node
 5) Stage 3: Orchestrator sends anonymized answers + all review JSON to Chairman (HIBA, port 9000)
 6) Chairman returns final synthesized answer → UI displays Stage 1, Stage 2, Stage 3 results
+```
 
-                     (Browser)
-                 Frontend UI (index.html)
-                         |
-                         |  HTTP: /health, /query, /council/status, /config
-                         v
-                Orchestrator (FastAPI)
-     - health monitor + workflow coordinator (Stages 1→2→3)
-     - serves UI (optional) + exposes REST API
-                         |
-      ---------------------------------------------------------
-      |                         |                            |
-      | Stage 1 /opinion        | Stage 2 /review            | Stage 3 /synthesize
-      v                         v                            v
- Council Node A             Council Node B                Chairman Service
- (FastAPI)                  (FastAPI)                     (FastAPI)
- /health                    /health                       /health
- /opinion                   /opinion                      /synthesize
- /review                    /review
-      |
-      |  Local inference on each machine
-      v
- Ollama (localhost:11434)  -> runs the local model for that service
-```
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        ORCHESTRATOR (:8080)                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │
-│  │   Health    │  │  Workflow   │  │   Config    │                 │
-│  │  Monitor    │  │   Engine    │  │  Manager    │                 │
-│  └─────────────┘  └─────────────┘  └─────────────┘                 │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-          ┌───────────────────┼───────────────────┐
-          │                   │                   │
-          ▼                   ▼                   ▼
-   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-   │ Council     │     │ Council     │     │ Council     │
-   │ Node 1      │     │ Node 2      │     │ Node 3      │
-   │ :5001       │     │ :5002       │     │ :5003       │
-   └─────────────┘     └─────────────┘     └─────────────┘
-          │                   │                   │
-          └───────────────────┼───────────────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │    CHAIRMAN     │
-                    │    :9000        │
-                    │ (Separate Host) │
-                    └─────────────────┘
 ```
 
 ### 3-Stage Workflow
@@ -160,7 +94,7 @@ HOW A FULL RUN HAPPENS (end-to-end)
 
 ---
 
-## ✅ Requirements Compliance
+##  Requirements Compliance
 
 | Requirement | Status | Implementation |
 |-------------|--------|----------------|
@@ -168,7 +102,6 @@ HOW A FULL RUN HAPPENS (end-to-end)
 | All LLMs run locally | ✅ | Ollama on each machine |
 | REST communication | ✅ | FastAPI endpoints |
 | 3-stage workflow | ✅ | Opinions → Reviews → Synthesis |
-| At least 3 council LLMs | ✅ | Configurable, default 3 |
 | Chairman separate service | ✅ | Dedicated FastAPI app |
 | Chairman separate machine | ✅ | Designed for distributed |
 | Health checks | ✅ | `/health` on all services |
@@ -178,7 +111,7 @@ HOW A FULL RUN HAPPENS (end-to-end)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -192,55 +125,36 @@ HOW A FULL RUN HAPPENS (end-to-end)
 ### Single Machine (Development/Fallback)
 
 ```bash
-# 1. Clone/copy the project
+#  Clone/copy the project
 cd llm-council
 
-# 2. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
+pip install fastapi uvicorn requests
 
-# 3. Start all services
-chmod +x scripts/*.sh
-./scripts/start_local.sh
+# Start all services
+( for example )
+set NODE_ID=council-5
+set NODE_NAME=Qwen Analyst (wendy)
+set MODEL_NAME=qwen2:1.5b
+set OLLAMA_URL=http://localhost:11434
+python -m uvicorn council_node.main:app --host 0.0.0.0 --port 5001
+ on each machine
 
-# 4. Test with CLI
-python test_client.py "What is an API?"
+# then on main pc open web UI
+python -m uvicorn chairman.main:app --host 0.0.0.0 --port 9000
 
-# 5. Or open web UI
+and other terminal :
+
+python -m uvicorn orchestrator.main:app --host 0.0.0.0 --port 8080
 # Open http://localhost:8080 in browser
 ```
 
-### Multi-Machine (Production Demo)
 
-**Machine A - Orchestrator:**
-```bash
-NODE_TYPE=orchestrator ./scripts/start_node.sh
-```
-
-**Machine B - Council Node 1:**
-```bash
-NODE_TYPE=council NODE_ID=council-1 PORT=5001 ./scripts/start_node.sh
-```
-
-**Machine C - Council Node 2:**
-```bash
-NODE_TYPE=council NODE_ID=council-2 PORT=5001 ./scripts/start_node.sh
-```
-
-**Machine D - Council Node 3:**
-```bash
-NODE_TYPE=council NODE_ID=council-3 PORT=5001 ./scripts/start_node.sh
-```
-
-**Machine E - Chairman:**
-```bash
-NODE_TYPE=chairman ./scripts/start_node.sh
-```
-
----
-
-## ⚙️ Configuration Guide
-
-### Option 1: YAML Configuration (Recommended)
+## Configuration Guide
+### Finding the IP Addresses
+### YAML Configuration 
+<img width="1619" height="832" alt="image" src="https://github.com/user-attachments/assets/bede5b4b-84a0-4c22-8ede-de8ab860c9f0" />
 
 Edit `config.yaml`:
 
@@ -276,60 +190,6 @@ fallback:
   min_council_members: 2  # Can run with 2 if 1 fails
 ```
 
-### Option 2: Environment Variables (Quick Override)
-
-```bash
-# Override node URLs
-export COUNCIL_NODE_1_URL=http://192.168.1.101:5001
-export COUNCIL_NODE_2_URL=http://192.168.1.102:5001
-export COUNCIL_NODE_3_URL=http://192.168.1.103:5001
-export CHAIRMAN_URL=http://192.168.1.104:9000
-
-# Override timeouts
-export TIMEOUT_OPINION=180
-export TIMEOUT_SYNTHESIS=240
-
-# Override minimum nodes
-export MIN_COUNCIL_MEMBERS=2
-```
-
----
-
-## 🌐 Networking Guide
-
-### Critical Rule: Bind to 0.0.0.0
-
-**❌ WRONG (localhost only):**
-```bash
-uvicorn main:app --host localhost --port 5001
-# Other machines CANNOT connect!
-```
-
-**✅ CORRECT (LAN accessible):**
-```bash
-uvicorn main:app --host 0.0.0.0 --port 5001
-# Other machines CAN connect!
-```
-
-### Recommended Port Scheme
-
-| Service | Port | Example URL |
-|---------|------|-------------|
-| Orchestrator | 8080 | `http://192.168.1.100:8080` |
-| Council Node 1 | 5001 | `http://192.168.1.101:5001` |
-| Council Node 2 | 5001 | `http://192.168.1.102:5001` |
-| Council Node 3 | 5001 | `http://192.168.1.103:5001` |
-| Chairman | 9000 | `http://192.168.1.104:9000` |
-
-### Firewall Configuration
-
-**Linux (UFW):**
-```bash
-sudo ufw allow 5001
-sudo ufw allow 8080
-sudo ufw allow 9000
-```
-
 **Windows:**
 ```powershell
 netsh advfirewall firewall add rule name="LLM Council" dir=in action=allow protocol=TCP localport=5001,8080,9000
@@ -337,27 +197,6 @@ netsh advfirewall firewall add rule name="LLM Council" dir=in action=allow proto
 
 ### Find Your IP Address
 
-**Linux/Mac:**
-```bash
-hostname -I | awk '{print $1}'
-# or
-ip addr show | grep "inet " | grep -v 127.0.0.1
-```
-
-**Windows:**
-```cmd
-ipconfig | findstr IPv4
-```
-
-### Mobile Hotspot Setup
-
-If using a phone hotspot:
-1. Connect all machines to the hotspot
-2. Check assigned IPs (usually 192.168.43.x)
-3. Update config.yaml with new IPs
-4. Test connectivity with `python scripts/test_lan.py`
-
----
 
 ## 🧪 Testing Strategy
 
@@ -420,27 +259,7 @@ curl http://<this-machine-ip>:5001/health
 - [ ] System works with one node disabled (fallback)
 
 ---
-
-## 📋 Demo Preparation Checklist
-
-### 1 Week Before Demo
-
-- [ ] All team members have project code
-- [ ] Ollama installed on all demo machines
-- [ ] Models pulled on all machines (`ollama pull llama3.2:1b`)
-- [ ] Test locally on each machine individually
-- [ ] Document each machine's role and IP
-
-### 1 Day Before Demo
-
-- [ ] Gather all machines on same network
-- [ ] Record all IP addresses
-- [ ] Update `config.yaml` with correct IPs
-- [ ] Run `./scripts/test_lan.py --test-all`
-- [ ] Complete at least one full workflow
-- [ ] Prepare emergency fallback (local mode)
-
-### Demo Day - 30 Minutes Before
+to check : 
 
 **On EACH machine:**
 ```bash
@@ -454,87 +273,7 @@ NODE_TYPE=<type> ./scripts/start_node.sh
 curl http://localhost:<port>/health
 ```
 
-**On orchestrator machine:**
-```bash
-# Check all nodes
-python test_client.py --health
 
-# Expected output:
-# ✓ Council Node 1 is healthy
-# ✓ Council Node 2 is healthy
-# ✓ Council Node 3 is healthy
-# ✓ Chairman is healthy
-# System is ready
-```
-
-### Emergency Fallback Procedure
-
-If LAN fails during demo:
-```bash
-# On the best available machine:
-./scripts/start_local.sh
-
-# Everything runs locally on ports 5001-5003, 8080, 9000
-python test_client.py "Your demo question"
-```
-
----
-
-## 🔧 Troubleshooting
-
-### "Connection refused"
-
-**Cause:** Service not running or bound to localhost
-
-**Fix:**
-```bash
-# Check service is running
-ps aux | grep uvicorn
-
-# Make sure using 0.0.0.0
-uvicorn main:app --host 0.0.0.0 --port 5001
-```
-
-### "Model not found"
-
-**Cause:** Model not pulled in Ollama
-
-**Fix:**
-```bash
-ollama pull llama3.2:1b
-ollama list  # Verify model exists
-```
-
-### "Timeout"
-
-**Cause:** Model too slow or network latency
-
-**Fix:**
-1. Increase timeouts in config.yaml
-2. Use smaller model (`:1b` instead of `:3b`)
-3. Check network with ping
-
-### "Not enough council members"
-
-**Cause:** Less than min_council_members healthy
-
-**Fix:**
-1. Check health: `python test_client.py --health`
-2. Fix unhealthy nodes
-3. Or lower `min_council_members` to 2 in config
-
-### "Ollama not running"
-
-**Fix:**
-```bash
-# Start Ollama
-ollama serve
-
-# Or on Linux with systemd
-sudo systemctl start ollama
-```
-
----
 
 ## 📁 Project Structure
 
@@ -563,21 +302,12 @@ llm-council/
 ├── frontend/
 │   └── index.html               # Web UI
 │
-├── scripts/
-│   ├── start_local.sh           # Start all locally
-│   ├── stop_local.sh            # Stop all services
-│   ├── start_node.sh            # Start single node
-│   └── test_lan.py              # LAN testing utility
-│
-├── tests/
-│   └── test_health.py           # Health check tests
-│
-└── test_client.py               # CLI test client
-```
+
+
 
 ---
 
-## 👥 Team Responsibilities Suggestion
+## Team Responsibilities Suggestion
 
 | Role | Machine | Services | Responsibility |
 |------|---------|----------|----------------|
@@ -589,6 +319,3 @@ llm-council/
 
 ---
 
-## 📄 License
-
-MIT License - University Project
