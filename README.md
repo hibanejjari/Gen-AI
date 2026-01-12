@@ -11,7 +11,7 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 
 - Reusability
 
--Flexibility
+- Flexibility
 
 - Security
 
