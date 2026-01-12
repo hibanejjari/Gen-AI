@@ -14,8 +14,8 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 7. [Project Structure](#project-structure)
 8. [Team Responsibilities](#team-responsibilities)
 
-   ```
 ## Architecture-overview
+```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                               LLM COUNCIL                                    │
 │                    Distributed Local Deployment (Tailscale)                  │
@@ -60,7 +60,7 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 └──────────────────────┘ └──────────────────────┘ └──────────────────────┘ └──────────────────────┘
 
 
-
+```
 
 ### 3-Stage Workflow
 ---
