@@ -17,6 +17,89 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 
 ## 🏗️ Architecture Overview
 ```
+LLM Council (5 people, distributed with Tailscale)
+
+LEGEND
+- Each "PC" runs its own Ollama + one FastAPI service per model
+- Orchestrator PC is the single entry point for the UI and workflow
+- All inter-PC communication is REST over Tailscale IPs (http://100.x.x.x:PORT)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PC: HIBA (Orchestrator + UI + Chairman + one council node)                   │
+│ WHY THIS PC:                                                                 │
+│ - Central entry point (frontend + orchestrator)                              │
+│ - Runs Chairman (must be separate service)                                   │
+│ - Can host an extra council node if needed                                   │
+│ RUNS:                                                                        │
+│  1) frontend/index.html                                                      │
+│     WHY: user submits question + sees Stage1/Stage2/Stage3 outputs           │
+│  2) orchestrator/main.py  (port 8080)                                        │
+│     WHY: coordinates workflow, calls all nodes, health checks, aggregates    │
+│  3) chairman/main.py      (port 9000)                                        │
+│     WHY: synthesizes final answer only (no Stage 1 opinions)                 │
+│  4) council node (optional) (example port 5002)                              │
+│     WHY: adds diversity + meets multi-LLM requirement if needed              │
+└───────────────┬──────────────────────────────────────────────────────────────┘
+                │  REST calls (Tailscale network)
+                │  Stage 1: POST /opinion  → collect answers
+                │  Stage 2: POST /review   → collect anonymized scoring
+                │  Stage 3: POST /synthesize → final answer
+                ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PC: CYPRIEN (Council Node 1)                                                 │
+│ WHY THIS PC:                                                                 │
+│ - Hosts one independent council model on a separate machine                  │
+│ RUNS:                                                                        │
+│  1) Ollama (local inference)                                                 │
+│     WHY: runs the model locally (no cloud API)                               │
+│  2) council_node/main.py  (port 5001)                                        │
+│     WHY: exposes /health /opinion /review endpoints for orchestrator         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PC: LISA-VIVO15 (Council Node 2)                                             │
+│ WHY THIS PC:                                                                 │
+│ - Adds a different model + reasoning style on another machine                │
+│ RUNS:                                                                        │
+│  1) Ollama                                                                    │
+│  2) council_node/main.py  (port 5001)                                        │
+│     WHY: produces opinions + reviews other answers anonymously               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PC: NEIL (Council Node 3)                                                    │
+│ WHY THIS PC:                                                                 │
+│ - Adds a lightweight model for diversity + speed                             │
+│ RUNS:                                                                        │
+│  1) Ollama                                                                    │
+│  2) council_node/main.py  (port 5001)                                        │
+│     WHY: produces opinions + provides peer review scores                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PC: WENDY (Council Node 4/5 depending on config)                             │
+│ WHY THIS PC:                                                                 │
+│ - Adds another independent council model on a separate machine               │
+│ RUNS:                                                                        │
+│  1) Ollama                                                                    │
+│  2) council_node/main.py  (port 5001 OR 5002 depending on her setup)         │
+│     WHY: produces opinions + reviews other answers anonymously               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+HOW A FULL RUN HAPPENS (end-to-end)
+1) User opens UI on HIBA PC (Orchestrator serves frontend)
+2) UI sends POST /query to Orchestrator (HIBA, port 8080)
+3) Stage 1: Orchestrator calls every healthy council node:
+   - CYPRIEN /opinion
+   - LISA   /opinion
+   - NEIL   /opinion
+   - WENDY  /opinion
+   - (optional HIBA council node) /opinion
+4) Stage 2: Orchestrator anonymizes answers (A,B,C,...) then calls /review on each node
+5) Stage 3: Orchestrator sends anonymized answers + all review JSON to Chairman (HIBA, port 9000)
+6) Chairman returns final synthesized answer → UI displays Stage 1, Stage 2, Stage 3 results
+
                      (Browser)
                  Frontend UI (index.html)
                          |
