@@ -4,15 +4,17 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 
 ## Table of Contents
 
-1. [Architecture Overview](#architecture-overview)
-2. [Requirements Compliance](#requirements-compliance)
-3. [Quick Start](#quick-start)
-4. [Configuration Guide](#configuration-guide)
-5. [Networking Guide](#networking-guide)
-6. [Testing Strategy](#testing-strategy)
-7. [Demo Checklist](#demo-checklist)
-8. [Troubleshooting](#troubleshooting)
+## Table of Contents
 
+1. [Architecture Overview](#architecture-overview)
+2. [3-Stage Workflow](#3-stage-workflow)
+3. [Requirements Compliance](#requirements-compliance)
+4. [Quick Start](#quick-start)
+5. [Configuration Guide](#configuration-guide)
+6. [Testing Strategy](#testing-strategy)
+7. [Project Structure](#project-structure)
+8. [Team Responsibilities](#team-responsibilities)
+  
 ---
 
 ## Architecture Overview
@@ -198,7 +200,7 @@ netsh advfirewall firewall add rule name="LLM Council" dir=in action=allow proto
 ### Find Your IP Address
 
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 ### Level 1: Local Testing (One Machine)
 
@@ -216,24 +218,8 @@ python test_client.py "Explain what a database index is"
 tail -f logs/*.log
 ```
 
-### Level 2: LAN Testing (Before Demo)
 
-```bash
-# On orchestrator machine, discover nodes
-python scripts/test_lan.py --info
-python scripts/test_lan.py --discover
-
-# Test specific node
-python scripts/test_lan.py --test 192.168.1.101 --port 5001
-
-# Test all configured nodes
-python scripts/test_lan.py --test-all
-
-# Full workflow test
-python test_client.py --url http://192.168.1.100:8080 "Test question"
-```
-
-### Level 3: Individual Node Testing
+### Individual Node Testing
 
 On each node machine:
 ```bash
@@ -246,6 +232,9 @@ curl http://localhost:5001/health
 # Test from another machine
 curl http://<this-machine-ip>:5001/health
 ```
+<img width="1600" height="628" alt="image" src="https://github.com/user-attachments/assets/cb589381-8561-49d9-a78f-2c7eb6d2fa69" />
+<img width="1600" height="828" alt="image" src="https://github.com/user-attachments/assets/d7bdf825-7d3c-4e68-aea5-46bd50c2f0d9" />
+
 
 ### Test Checklist
 
@@ -259,23 +248,8 @@ curl http://<this-machine-ip>:5001/health
 - [ ] System works with one node disabled (fallback)
 
 ---
-to check : 
 
-**On EACH machine:**
-```bash
-# 1. Check Ollama is running
-curl http://localhost:11434/api/tags
-
-# 2. Start the appropriate service
-NODE_TYPE=<type> ./scripts/start_node.sh
-
-# 3. Verify health
-curl http://localhost:<port>/health
-```
-
-
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 llm-council/
@@ -307,15 +281,16 @@ llm-council/
 
 ---
 
-## Team Responsibilities Suggestion
+## Team Responsibilities
 
-| Role | Machine | Services | Responsibility |
-|------|---------|----------|----------------|
-| Student 1 | Laptop A | Orchestrator | Demo coordination, config |
-| Student 2 | Laptop B | Council 1 | Node monitoring |
-| Student 3 | Laptop C | Council 2 | Network troubleshooting |
-| Student 4 | Laptop D | Council 3 | Backup fallback |
-| Student 5 | Laptop E | Chairman | Final presentation |
+| Role      | Team Member | Machine  | Services Running                                    | Responsibility                                                                                               |
+| --------- | ----------- | -------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Student 1 | Cyprien     | Laptop A | Council Node (Llama Analyst)                        | Runs a council LLM, participates in Stage 1 and Stage 2                                                      |
+| Student 2 | Lisa        | Laptop B | Council Node (Phi Analyst)                          | Runs a council LLM, participates in Stage 1 and Stage 2                                                      |
+| Student 3 | Neil        | Laptop C | Council Node (Smollm Analyst)                       | Runs a council LLM, participates in Stage 1 and Stage 2                                                      |
+| Student 4 | Hiba        | Laptop D | Council Node (Qwen Small) + Orchestrator + Chairman | Central coordination, runs the orchestrator (Stage 0), runs a council node, and hosts the Chairman (Stage 3) |
+| Student 5 | Wendy       | Laptop E | Council Node (Qwen Analyst)                         | Runs a council LLM, participates in Stage 1 and Stage 2                                                      |
+
 
 ---
 
