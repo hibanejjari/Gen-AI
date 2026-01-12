@@ -15,7 +15,7 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 7. [Project Structure](#project-structure)
 8. [Team Responsibilities](#team-responsibilities)
   
----
+
 
 ## Architecture Overview
 ```
@@ -68,7 +68,7 @@ LEGEND
 │ PC: WENDY (Council Node 5                                                    │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
-
+---
 
 HOW A FULL RUN HAPPENS (end-to-end)
 1) User opens UI on HIBA PC (Orchestrator serves frontend)
@@ -84,10 +84,10 @@ HOW A FULL RUN HAPPENS (end-to-end)
 6) Chairman returns final synthesized answer → UI displays Stage 1, Stage 2, Stage 3 results
 ```
 
-```
+
 
 ### 3-Stage Workflow
-
+---
 | Stage | Description | Endpoint |
 |-------|-------------|----------|
 | **1. First Opinions** | Each council node generates independent answer | `POST /opinion` |
@@ -97,7 +97,7 @@ HOW A FULL RUN HAPPENS (end-to-end)
 ---
 
 ##  Requirements Compliance
-
+---
 | Requirement | Status | Implementation |
 |-------------|--------|----------------|
 | No cloud APIs | ✅ | Uses Ollama locally |
@@ -136,25 +136,28 @@ pip install fastapi uvicorn requests
 
 # Start all services
 ( for example )
+---
 set NODE_ID=council-5
 set NODE_NAME=Qwen Analyst (wendy)
 set MODEL_NAME=qwen2:1.5b
 set OLLAMA_URL=http://localhost:11434
 python -m uvicorn council_node.main:app --host 0.0.0.0 --port 5001
+---
  on each machine
 
 # then on main pc open web UI
+---
 python -m uvicorn chairman.main:app --host 0.0.0.0 --port 9000
 
 and other terminal :
-
+---
 python -m uvicorn orchestrator.main:app --host 0.0.0.0 --port 8080
 # Open http://localhost:8080 in browser
 ```
 
 
 ## Configuration Guide
-### Finding the IP Addresses
+### Finding the IP Addresses first
 ### YAML Configuration 
 <img width="1619" height="832" alt="image" src="https://github.com/user-attachments/assets/bede5b4b-84a0-4c22-8ede-de8ab860c9f0" />
 
@@ -192,33 +195,9 @@ fallback:
   min_council_members: 2  # Can run with 2 if 1 fails
 ```
 
-**Windows:**
-```powershell
-netsh advfirewall firewall add rule name="LLM Council" dir=in action=allow protocol=TCP localport=5001,8080,9000
-```
-
-### Find Your IP Address
 
 
-## Testing Strategy
-
-### Level 1: Local Testing (One Machine)
-
-```bash
-# Start all services locally
-./scripts/start_local.sh
-
-# Run health check
-python test_client.py --health
-
-# Run full workflow
-python test_client.py "Explain what a database index is"
-
-# Check logs
-tail -f logs/*.log
-```
-
-
+`Then :
 ### Individual Node Testing
 
 On each node machine:
@@ -235,6 +214,7 @@ curl http://<this-machine-ip>:5001/health
 <img width="1600" height="628" alt="image" src="https://github.com/user-attachments/assets/cb589381-8561-49d9-a78f-2c7eb6d2fa69" />
 <img width="1600" height="828" alt="image" src="https://github.com/user-attachments/assets/d7bdf825-7d3c-4e68-aea5-46bd50c2f0d9" />
 
+Then executing on main machine.
 
 ### Test Checklist
 
@@ -292,5 +272,5 @@ llm-council/
 | Student 5 | Wendy       | Laptop E | Council Node (Qwen Analyst)                         | Runs a council LLM, participates in Stage 1 and Stage 2                                                      |
 
 
----
+
 
