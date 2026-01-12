@@ -17,52 +17,48 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
    ```
 ## Architecture-overview
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ PC: HIBA                                                                    │
-│ ROLES: Orchestrator + UI + Chairman + Council Node                           │
-│ WHY THIS PC:                                                                │
-│ - Central entry point for the whole system                                   │
-│ - Hosts the web UI and workflow logic                                        │
-│ - Runs the Chairman LLM for final synthesis                                  │
-│ - Also runs one council node to increase model diversity                     │
-│                                                                              │
-│ RUNNING SERVICES:                                                           │
-│  1) frontend/index.html                                                      │
-│     - User interface to submit queries and inspect results                   │
-│                                                                              │
-│  2) orchestrator/main.py  (port 8080)                                        │
-│     - Coordinates the 3-stage workflow                                       │
-│     - Performs health checks on all nodes                                    │
-│     - Collects opinions, reviews, and triggers synthesis                     │
-│                                                                              │
-│  3) chairman/main.py  (port 9000)                                            │
-│     - Receives all answers and reviews                                       │
-│     - Produces the final synthesized response only                           │
-│                                                                              │
-│  4) council_node/main.py  (Node 4, port 5002)                                │
-│     - Acts as an additional independent council member                       │
-│     - Participates in Stage 1 and Stage 2                                    │
-└───────────────────────────────┬──────────────────────────────────────────────┘
-                                │
-                                │  REST API calls over Tailscale
-                                │  Stage 1: POST /opinion   (independent answers)
-                                │  Stage 2: POST /review    (anonymous scoring)
-                                │  Stage 3: POST /synthesize (final answer)
-                                │
-                                ▼
+│                               LLM COUNCIL                                    │
+│                    Distributed Local Deployment (Tailscale)                  │
+└──────────────────────────────────────────────────────────────────────────────┘
 
-HOW A FULL RUN HAPPENS (end-to-end)
-1) User opens UI on HIBA PC (Orchestrator serves frontend)
-2) UI sends POST /query to Orchestrator (HIBA, port 8080)
-3) Stage 1: Orchestrator calls every healthy council node:
-   - CYPRIEN /opinion
-   - LISA   /opinion
-   - NEIL   /opinion 
-   - HIBA   /opinion
-   - WENDY  /opinion
-4) Stage 2: Orchestrator anonymizes answers (A,B,C,...) then calls /review on each node
-5) Stage 3: Orchestrator sends anonymized answers + all review JSON to Chairman (HIBA, port 9000)
-6) Chairman returns final synthesized answer → UI displays Stage 1, Stage 2, Stage 3 results
-```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PC: HIBA                                                                      │
+│ Roles: Orchestrator + UI + Chairman + Council Node                            │
+│                                                                              │
+│ Services                                                                      │
+│  - frontend/index.html                                                        │
+│  - orchestrator/main.py   (8080)                                              │
+│  - chairman/main.py       (9000)                                              │
+│  - council_node/main.py   (5002)                                              │
+│                                                                              │
+│ Responsibilities                                                             │
+│  - Entry point for UI                                                        │
+│  - Coordinates workflow                                                      │
+│  - Health checks & aggregation                                                │
+│  - Final synthesis (Chairman)                                                 │
+└───────────────┬──────────────────────────────────────────────────────────────┘
+                │ REST over Tailscale (http://100.x.x.x)
+                │
+                │ Stage 1: POST /opinion
+                │ Stage 2: POST /review
+                │ Stage 3: POST /synthesize
+                │
+                ▼
+        ┌──────────────────────┬──────────────────────┬──────────────────────┐
+        │                      │                      │                      │
+┌──────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐
+│ PC: CYPRIEN           │ │ PC: LISA-VIVO15      │ │ PC: NEIL              │ │ PC: WENDY            │
+│ Council Node 1        │ │ Council Node 2        │ │ Council Node 3        │ │ Council Node 5        │
+│                       │ │                       │ │                       │ │                       │
+│ council_node/main.py  │ │ council_node/main.py  │ │ council_node/main.py  │ │ council_node/main.py  │
+│ port: 5001            │ │ port: 5001            │ │ port: 5001            │ │ port: 5001            │
+│                       │ │                       │ │                       │ │                       │
+│ Endpoints             │ │ Endpoints             │ │ Endpoints             │ │ Endpoints             │
+│  - /health            │ │  - /health            │ │  - /health            │ │  - /health            │
+│  - /opinion           │ │  - /opinion           │ │  - /opinion           │ │  - /opinion           │
+│  - /review            │ │  - /review            │ │  - /review            │ │  - /review            │
+└──────────────────────┘ └──────────────────────┘ └──────────────────────┘ └──────────────────────┘
+
 
 
 
