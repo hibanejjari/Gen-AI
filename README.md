@@ -16,7 +16,30 @@ A distributed system where multiple local LLMs collaborate through a 3-stage cou
 ---
 
 ## 🏗️ Architecture Overview
-
+```
+                     (Browser)
+                 Frontend UI (index.html)
+                         |
+                         |  HTTP: /health, /query, /council/status, /config
+                         v
+                Orchestrator (FastAPI)
+     - health monitor + workflow coordinator (Stages 1→2→3)
+     - serves UI (optional) + exposes REST API
+                         |
+      ---------------------------------------------------------
+      |                         |                            |
+      | Stage 1 /opinion        | Stage 2 /review            | Stage 3 /synthesize
+      v                         v                            v
+ Council Node A             Council Node B                Chairman Service
+ (FastAPI)                  (FastAPI)                     (FastAPI)
+ /health                    /health                       /health
+ /opinion                   /opinion                      /synthesize
+ /review                    /review
+      |
+      |  Local inference on each machine
+      v
+ Ollama (localhost:11434)  -> runs the local model for that service
+```
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        ORCHESTRATOR (:8080)                         │
