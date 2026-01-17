@@ -338,8 +338,7 @@ Expected response:
 
 ---
 ```
-
----
+```
 
 ## Screenshots (UI + Swagger)
 
@@ -367,6 +366,8 @@ Expected response:
 ![Swagger /answer request body](images/swagger_answer_request_body.jpg)
 ![Swagger /answer success response](images/swagger_answer_success_response.jpg)
 ![Swagger responses (200 / 422)](images/swagger_responses_200_422.jpg)
+
+```
 
 ---
 
