@@ -367,8 +367,6 @@ Expected response:
 ![Swagger /answer success response](images/swagger_answer_success_response.jpg)
 ![Swagger responses (200 / 422)](images/swagger_responses_200_422.jpg)
 
-```
-
 ---
 
 ## Technical Architecture
@@ -490,8 +488,6 @@ Gen-AI-main/
 | Student 3 | Neil Mahcer    | Laptop C | Council Node                              | Stage 1 opinions + Stage 2 reviews |
 | Student 4 | Hiba Nejjari   | Laptop D | Orchestrator + Chairman (+ optional node) | Coordination + Stage 3 synthesis   |
 | Student 5 | Wendy Duong    | Laptop E | Council Node                              | Stage 1 opinions + Stage 2 reviews |
-
-```
 
 ---
 
