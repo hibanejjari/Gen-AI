@@ -497,13 +497,12 @@ Generative AI tools (LLMs) were **explicitly allowed** for this project and were
 
 ### Tools & Models Used
 - **Local LLMs** via Ollama (council & chairman models listed in configuration)
-- **LLM assistants** (ChatGPT, Copilot) for engineering support and documentation
+- **LLM assistants** (ChatGPT, Copilot, Claude) for engineering support and documentation
 
 ### Usage Purpose
 Generative AI was applied for:
 - **Debugging** (error interpretation, hypothesis generation, troubleshooting)
 - **Code generation** (boilerplate, API endpoints, configuration templates)
-- **Documentation** (README, API specifications, inline comments)
 - **Application design** decisions (architecture suggestions, workflow design, UI ideas)
 - **Code refactoring** (naming, structure, readability, consistency)
 - **Documentation quality** improvements
