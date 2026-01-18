@@ -143,6 +143,8 @@ pip install fastapi uvicorn requests  # Core dependencies
 
 On each machine, open Tailscale and note the private IP address (format: `100.x.x.x`).
 
+![Tailscale](images/tailscale.png)
+
 ### Step 2 — Configure `config.yaml`
 
 Edit `config.yaml` with your actual machine IPs and model assignments:
