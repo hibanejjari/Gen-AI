@@ -1,13 +1,4 @@
 # LLM Council — Local Distributed Deployment (Tailscale)
-
-A distributed system where multiple **local** LLMs collaborate through a **3-stage council workflow** to answer a question:
-
-1) **Opinions**: each council node generates an independent answer  
-2) **Reviews**: each node reviews & ranks anonymized opinions (JSON scores + ranking)  
-3) **Synthesis**: a chairman model produces a final consolidated answer  
-
-Everything runs **locally** with **Ollama** (no cloud API). Machines communicate securely over **Tailscale** (private `100.x.x.x` network).
-
 ---
 
 ## Group Information
@@ -33,37 +24,41 @@ Everything runs **locally** with **Ollama** (no cloud API). Machines communicate
 14. [Generative AI Usage Statement](#generative-ai-usage-statement)
 
 ---
+# Project Summary
 
 ## Project Overview
+The system we put in place replaces a single-LLM pipeline with a multi-LLM collaboration, where models independently respond, critique each other’s outputs, and synthesize a final answer.
+A distributed system where 5 local LLMs collaborate through a democratic 3-stage workflow: independent opinions → anonymized peer review → chairman synthesis. All models run locally via Ollama across multiple machines connected through Tailscale VPN.
 
-This project is made of 4 main components:
+## Technologies Used
+- **FastAPI** - Microservices architecture (Orchestrator, Council Nodes, Chairman)
+- **Ollama** - Local LLM inference 
+- **Tailscale** - Secure private networking (`100.x.x.x` VPN)
+- **Python 3.10+** - Backend services with Pydantic validation
+- **HTML/CSS/JS** - Static frontend UI served by orchestrator
 
-- **Council Nodes** (`council_node/`)  
-  FastAPI service running a local LLM via **Ollama**, able to:
-  - generate an **opinion** (Stage 1)
-  - generate a **review** (Stage 2)
 
-- **Chairman** (`chairman/`)  
-  FastAPI service that produces the **final answer** (Stage 3) using all opinions + reviews.
+- **3-stage democratic workflow**: Opinions → Reviews → Synthesis ensures diverse perspectives with anonymized peer evaluation
+- **Model diversity**: 5 different model families (Llama, Phi, SmolLM, Qwen 0.5B-1.5B) + stronger chairman (Llama 3B) for varied reasoning
+- **Graceful degradation**: System continues with minimum 2 nodes if others fail, configurable timeouts prevent blocking
+- **YAML configuration**: Centralized `config.yaml` for all node URLs/models, replacing hardcoded values for easy distributed deployment
+- 
+In detail :
 
-- **Orchestrator** (`orchestrator/`)  
-  Central coordination service that:
-  - monitors health of all nodes + chairman
-  - runs Stage 1 → Stage 2 → Stage 3
-  - stores results (opinions/reviews/final) for each query
-  - serves the **frontend**
+Workflow (Stage 1 → 2 → 3)
 
-- **Frontend UI** (`frontend/`)  
-  Web interface that displays:
-  - node status (online/offline)
-  - stage-by-stage outputs
-  - final synthesis
+| Stage | Description | Endpoint |
+|-------|-------------|----------|
+| **1. First Opinions** | Each council node generates independent answer | `POST /opinion` |
+| **2. Review & Ranking** | Each node reviews others' answers anonymously | `POST /review` |
+| **3. Chairman Synthesis** | Chairman combines insights into final answer | `POST /synthesize` |
 
-To see the architecture overview, please see [Architecture Overview](./Architecture%20Overview.md)
-
+**Additional endpoints available:**
+- `GET /health` - Check node status and Ollama connectivity
+- `POST /answer` - Legacy endpoint for backward compatibility
+- `GET /info` - Node metadata and configuration details
 ---
-
-## Technical Report :
+## Distinction :
 
 ### Services & Ports
 - **Orchestrator**: `http://localhost:8080`
@@ -73,229 +68,126 @@ To see the architecture overview, please see [Architecture Overview](./Architect
 ### Network (Tailscale)
 We used **Tailscale** to connect machines on a private network (`100.x.x.x`) without exposing ports publicly.  
 We joined the same tailnet using a **team tailnet account** (common account).
+<img width="1619" height="832" alt="Capture d&#39;écran 2026-01-12 092309" src="https://github.com/user-attachments/assets/2d0e656c-fc07-493c-b303-860615cafd1b" />
 
-### Example config (real project)
-Your `config.yaml` defines all nodes with their Tailscale IPs and models, for example:
-- council-1 → `llama3.2:1b`
-- council-2 → `phi3:mini`
-- council-3 → `smollm2:135m`
-- council-4 → `qwen2.5:0.5b`
-- council-5 → `qwen2:1.5b`
-- chairman → `llama3.2:3b`
+### Selected LLM Models
+
+**Council nodes** (from `config.yaml`):
+- `llama3.2:1b` — Fast, good reasoning
+- `phi3:mini` — Lightweight, efficient
+- `smollm2:135m` — Very small, instant inference
+- `qwen2.5:0.5b` — Quantized, low latency
+- `qwen2:1.5b` — Balanced performance
+
+**Chairman**:
+- `llama3.2:3b` — Stronger synthesis capabilities
+  
+In selecting our models, our objective was to balance **speed, hardware constraints, and reasoning diversity**:
+
+- **Small council models**: Enable fast inference on laptops, reduce request timeouts, facilitate parallelization across Stage 1 and Stage 2
+- **Model diversity**: Using different families (Llama / Phi / SmolLM / Qwen) increases reasoning variety and reduces correlated errors
+- **Stronger chairman**: `llama3.2:3b` improves synthesis coherence and conflict resolution across multiple opinions and reviews
 
 ---
-## Workflow (Stage 1 -> 2 -> 3)
----
-| Stage | Description | Endpoint |
-|-------|-------------|----------|
-| **1. First Opinions** | Each council node generates independent answer | `POST /opinion` |
-| **2. Review & Ranking** | Each node reviews others' answers anonymously | `POST /review` |
-| **3. Chairman Synthesis** | Chairman combines insights into final answer | `POST /synthesize` |
+### Key System Features
 
----
+#### Health Monitoring & Graceful Degradation
+- Every service exposes a `GET /health` endpoint.
+- The orchestrator periodically checks each council node’s status:
+  - **Reachable**: responds with HTTP 200  
+  - **Offline**: marked with the failure reason (timeout, connection refused, etc.)
+- A node is considered **healthy** when FastAPI is responsive and, for council nodes, Ollama is reachable with the configured model available.
+- The system supports **graceful degradation**: execution continues as long as a minimum number of nodes are available, configured via  
+  `fallback.min_council_members = 2`.
 
-## Setup & Installation
+#### Robust JSON Review Output (Stage 2)
+- During Stage 2, council nodes produce structured JSON containing:
+  - `scores` for each opinion (accuracy and insight, scaled from 0 to 10)
+  - A `ranking` of all anonymized opinions
+- The system includes robust parsing logic that:
+  - Extracts valid JSON even if surrounded by additional text
+  - Normalizes missing or invalid values to the valid `[0–10]` range
+- This ensures consistent and reliable evaluation despite LLM output variability.
 
-### Prerequisites (on each machine)
+### Response Storage
 
-1. **Python 3.10+**
-2. **Ollama** installed and running locally
-3. **Required LLM model** pulled (assigned in `config.yaml`):
-   ```bash
-   ollama pull llama3.2:1b  # Example
-   ```
-4. **Tailscale** installed and connected to the same account (for secure LAN communication)
-   > Campus Wi-Fi blocks direct peer-to-peer connections, so Tailscale creates a private network (`100.x.x.x`)
+The orchestrator stores all data **in-memory** using a Python dictionary:
 
-### Install Python dependencies
-
-From project root:
-
-```bash
-pip install -r requirements.txt
-pip install fastapi uvicorn requests  # Core dependencies
+```python
+queries: Dict[str, QueryResponse] = {}
 ```
 
----
+For each `query_id`, it stores:
+- `opinions` — dict keyed by `node_id` (content + model + timing)
+- `reviews` — dict keyed by `node_id` (JSON scores + raw output + timing)
+- `final_answer` — chairman's synthesized response
+- `status`, `timing`, `nodes_used`, `error` (if applicable)
 
-## Requirements Compliance
 
-### Project Requirements Met
-
-| Requirement | Status | Implementation |
-|-------------|--------|----------------|
-| No cloud APIs | ✅ | Uses Ollama locally |
-| All LLMs run locally | ✅ | Ollama on each machine |
-| REST communication | ✅ | FastAPI endpoints |
-| 3-stage workflow | ✅ | Opinions → Reviews → Synthesis |
-| Chairman separate service | ✅ | Dedicated FastAPI app |
-| Chairman separate machine | ✅ | Designed for distributed |
-| Health checks | ✅ | `/health` on all services |
-| Timeouts & retries | ✅ | Configurable timeouts |
-| Graceful degradation | ✅ | min_council_members = 2 |
-| Dynamic configuration | ✅ | YAML config + env vars |
+But the limitation is that storage is **not persistent** : restarting the orchestrator clears all data. A production system would use a database.
 
 ---
 
-## Configuration Guide
-
-### Step 1 — Gather Network Information
-
-On each machine, open Tailscale and note the private IP address (format: `100.x.x.x`).
-
-![Tailscale](images/tailscale.png)
-
-### Step 2 — Configure `config.yaml`
-
-Edit `config.yaml` with your actual machine IPs and model assignments:
-
-```yaml
-orchestrator:
-  host: "0.0.0.0"
-  port: 8080
-
-council_nodes:
-  - id: "council-1"
-    name: "Llama Analyst (Cyprien)"
-    url: "http://100.xxx.xxx.xxx:5001"  # Replace with actual Tailscale IP
-    model: "llama3.2:1b"
-    priority: 1
-    enabled: true
-
-  - id: "council-2"
-    name: "Phi Analyst (Lisa)"
-    url: "http://100.xxx.xxx.xxx:5001"
-    model: "phi3:mini"
-    priority: 2
-    enabled: true
-
-  - id: "council-3"
-    name: "SmolLM Analyst (Neil)"
-    url: "http://100.xxx.xxx.xxx:5001"
-    model: "smollm2:135m"
-    priority: 3
-    enabled: true
-
-  - id: "council-4"
-    name: "Qwen Small Analyst (Hiba)"
-    url: "http://100.xxx.xxx.xxx:5001"
-    model: "qwen2.5:0.5b"
-    priority: 4
-    enabled: true
-
-  - id: "council-5"
-    name: "Qwen Analyst (Wendy)"
-    url: "http://100.xxx.xxx.xxx:5001"
-    model: "qwen2:1.5b"
-    priority: 5
-    enabled: true
-
-chairman:
-  id: "chairman"
-  name: "Council Chairman"
-  url: "http://100.xxx.xxx.xxx:9000"
-  model: "llama3.2:3b"
-
-fallback:
-  min_council_members: 2
-  enable_local_fallback: true
-  local_model: "llama3.2:1b"
-
-timeouts:
-  health_check: 5
-  opinion: 120
-  review: 90
-  synthesis: 180
-```
+#### Frontend Integration via Static HTML
+- A lightweight static frontend is located at `frontend/index.html`.
+- The orchestrator serves this UI directly using FastAPI’s `StaticFiles`.
+- This approach avoids external UI frameworks (like Streamlit or Gradio) while still enabling:
+  - Real-time system status monitoring
+  - Execution of individual workflow stages
+  - Visualization of opinions, reviews, and final synthesis
 
 ---
 
-## How to Run the Demo
 
-### On Each Council Node Machine
+**Important** : See [set_up.md](./set_up.md) for setup and testing.
 
-1. **Start the council node service:**
-   ```bat
-   set NODE_ID=council-5
-   set NODE_NAME=Qwen Analyst (Wendy)
-   set MODEL_NAME=qwen2:1.5b
-   set OLLAMA_URL=http://localhost:11434
-
-   python -m uvicorn council_node.main:app --host 0.0.0.0 --port 5001
-   ```
-
-2. **Verify it's running:**
-   ```bat
-   curl http://localhost:5001/health
-   ```
-
-### On the Main Machine (Chairman + Orchestrator)
-
-Open **two separate terminals**:
-
-**Terminal 1 — Chairman service:**
-```bat
-python -m uvicorn chairman.main:app --host 0.0.0.0 --port 9000
-```
-
-**Terminal 2 — Orchestrator + UI:**
-```bat
-python -m uvicorn orchestrator.main:app --host 0.0.0.0 --port 8080
-# Open: http://localhost:8080 in browser
-```
-
-### Using the Web UI
-
-Once all services are running, open `http://localhost:8080` and you can:
--  Run **Stage 1** only (opinions generation)
--  Run **Stage 2** only (reviews & ranking)
--  Run **Stage 3** only (synthesis)
--  Run the **complete workflow** end-to-end
--  View node health status
 
 ---
 
-## Testing & Verification
+## Improvements Over Original
 
-### Node Health Checks
+**Karpathy's Original**: Single-machine web app using OpenRouter API to query cloud LLMs, React frontend, FastAPI backend, JSON file storage
 
-After starting services, verify each node is healthy:
+**Our Implementation**: Fully distributed system running local Ollama models across physical network
 
-```bash
-# Local health check (on the node machine)
-curl http://localhost:5001/health
+### Major Improvements
 
-# Remote health check (from another machine)
-curl http://100.xxx.xxx.xxx:5001/health
-```
+**1. Local Inference vs Cloud API**
+- **Original**: Requires OpenRouter API key + credits, calls cloud services (GPT-5, Gemini, Claude, Grok)
+- **Ours**: 100% local Ollama, zero ongoing costs, complete data privacy, works offline
 
-Expected response:
-```json
-{
-  "status": "healthy",
-  "node_id": "council-1",
-  "ollama_status": "ready"
-}
-```
+**2. Distributed Architecture**
+- **Original**: Single-machine deployment (frontend + backend on one computer)
+- **Ours**: True distributed system across 5+ physical machines with Tailscale VPN networking
 
-### Full System Validation Checklist
+**3. Infrastructure & Deployment**
+- **Original**: Simple `uv run` to start, no network complexity
+- **Ours**: Real distributed infrastructure with health monitoring, LAN testing utilities, startup/shutdown scripts, firewall configuration
 
-- [ ] All council nodes respond to `/health` (HTTP 200)
-- [ ] All council nodes respond to `/opinion` endpoint
-- [ ] All council nodes respond to `/review` endpoint
-- [ ] Chairman responds to `/health` (HTTP 200)
-- [ ] Chairman responds to `/synthesize` endpoint
-- [ ] Orchestrator UI shows all nodes as **online**
-- [ ] **Stage 1 test**: Generate opinions from all nodes
-- [ ] **Stage 2 test**: Generate reviews from all nodes
-- [ ] **Stage 3 test**: Generate synthesis from chairman
-- [ ] **Fallback test**: Disable one node and verify system still works (requires `min_council_members: 2`)
+**4. Configuration Management**
+- **Original**: Hardcoded models in `backend/config.py`
+- **Ours**: Centralized `config.yaml` with per-node URLs/models, environment variable overrides, distributed deployment templates
+
+**5. Reliability & Fault Tolerance**
+- **Original**: Basic error handling for API failures
+- **Ours**: Timeout protection per stage, retry logic, graceful degradation (continues with min 2 nodes), comprehensive health checks validating Ollama connectivity
+
+**6. Service Separation**
+- **Original**: Monolithic backend handles all stages
+- **Ours**: Microservices architecture - separate Chairman service, independent council node services, orchestrator coordination
+
+**7. Developer Tools**
+- **Original**: Web UI only
+- **Ours**: CLI test client, LAN discovery/testing scripts, automated deployment scripts, health check test suite, Swagger API documentation
+
+**8. Model Selection Philosophy**
+- **Original**: Premium cloud models (latest GPT, Gemini, Claude versions)
+- **Ours**: Small efficient models (1B-3B params) optimized for consumer laptop hardware, diverse model families for reasoning variety
 
 ---
-```
-```
 
-## Screenshots (UI + Swagger)
+
+### DEMO Screenshots :
 
 ### UI — Home & System Status
 
@@ -336,97 +228,6 @@ We used **FastAPI**, which allows us to automatically generate clear Swagger doc
 ![Swagger responses (200 / 422)](images/swagger_responses_200_422.jpg)
 
 ---
-
-## Technical Architecture
-
-### Key Design Decisions
-
-#### 1) Microservices Architecture (FastAPI)
-
-- Each council member is a separate FastAPI service (`council_node`)
-- The chairman is a separate service (`chairman`)
-- The orchestrator coordinates all services (`orchestrator`) and exposes a unified entry point for the UI
-
-#### 2) Local Inference with Ollama
-
-- Each node calls the local Ollama API (`/api/generate`)
-- Models are configured per node via environment variables and `config.yaml`
-
-#### 3) Health Monitoring
-
-- Every service exposes `GET /health`
-- The orchestrator periodically checks each node's status:
-  - **Reachable**: responds with HTTP 200
-  - **Offline**: marked with reason (timeout / connection refused / etc.)
-
-**What "health OK" means:**
-When you see "health OK" or "healthy" in logs, it indicates:
-- FastAPI is responding correctly
-- On council nodes specifically: Ollama is reachable and the configured model is available
-- Status can be `"healthy"` (when `ollama_status == "ready"`) or `"degraded"` (partially functional)
-
-#### 4) Graceful Degradation (Fallback)
-
-- If some nodes are offline, the orchestrator continues operation as long as minimum nodes are available:
-  - Configured via `fallback.min_council_members = 2` (at least 2 nodes required)
-
-#### 5) JSON Review Output (Robust Parsing)
-
-- Stage 2 outputs structured JSON with:
-  - `scores` per opinion (accuracy + insight dimensions)
-  - `ranking` ordered list of opinions
-- The council node includes robust JSON parsing:
-  - Extracts JSON even if LLM adds surrounding text
-  - Normalizes missing/invalid scores to valid `[0..10]` range
-
-#### 6) Frontend Integration: Static HTML UI Served by the Orchestrator
-
-The project includes a lightweight static frontend located at `frontend/index.html`. Instead of using a Python UI framework (Streamlit/Gradio), the orchestrator serves this page directly using FastAPI’s `StaticFiles` mounting and routes.
-
----
-
-### Selected LLM Models
-
-**Council nodes** (from `config.yaml`):
-- `llama3.2:1b` — Fast, good reasoning
-- `phi3:mini` — Lightweight, efficient
-- `smollm2:135m` — Very small, instant inference
-- `qwen2.5:0.5b` — Quantized, low latency
-- `qwen2:1.5b` — Balanced performance
-
-**Chairman**:
-- `llama3.2:3b` — Stronger synthesis capabilities
-
-### Model Selection Rationale
-
-Our objective was to build a distributed LLM council on consumer laptops while maintaining full local inference (Ollama). The selected models balance **speed, hardware constraints, and reasoning diversity**:
-
-- **Small council models**: Enable fast inference on laptops, reduce request timeouts, facilitate parallelization across Stage 1 and Stage 2
-- **Model diversity**: Using different families (Llama / Phi / SmolLM / Qwen) increases reasoning variety and reduces correlated errors
-- **Stronger chairman**: `llama3.2:3b` improves synthesis coherence and conflict resolution across multiple opinions and reviews
-
----
-
-### Response Storage
-
-The orchestrator stores all data **in-memory** using a Python dictionary:
-
-```python
-queries: Dict[str, QueryResponse] = {}
-```
-
-For each `query_id`, it stores:
-- `opinions` — dict keyed by `node_id` (content + model + timing)
-- `reviews` — dict keyed by `node_id` (JSON scores + raw output + timing)
-- `final_answer` — chairman's synthesized response
-- `status`, `timing`, `nodes_used`, `error` (if applicable)
-
-This satisfies the project requirement of storing responses in a structured dictionary.
-
-**Limitation**: Storage is **not persistent** — restarting the orchestrator clears all data. A production system would use a database.
-
----
-
 
 ---
 
