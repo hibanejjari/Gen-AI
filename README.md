@@ -71,6 +71,8 @@ In detail :
 - `POST /answer` - Legacy endpoint for backward compatibility
 - `GET /info` - Node metadata and configuration details
 ---
+For a detailed architecture overview, see [Architecture.md](./Architecture.md).
+---
 ## Distinction :
 
 ### Services & Ports
