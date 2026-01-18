@@ -379,7 +379,8 @@ When you see "health OK" or "healthy" in logs, it indicates:
 
 #### 6) Frontend Integration: Static HTML UI Served by the Orchestrator
 
--The project includes a lightweight static frontend located at frontend/index.html. Instead of using a Python UI framework (Streamlit/Gradio), the orchestrator serves this page directly using FastAPI’s StaticFiles mounting and routes.
+The project includes a lightweight static frontend located at `frontend/index.html`. Instead of using a Python UI framework (Streamlit/Gradio), the orchestrator serves this page directly using FastAPI’s `StaticFiles` mounting and routes.
+
 ---
 
 ### Selected LLM Models
