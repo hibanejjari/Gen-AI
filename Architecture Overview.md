@@ -43,11 +43,11 @@ Here you can find the architecture behind our project and the folder structure i
 │  - /opinion           │ │  - /opinion           │ │  - /opinion           │ │  - /opinion           │
 │  - /review            │ │  - /review            │ │  - /review            │ │  - /review            │
 └──────────────────────┘ └──────────────────────┘ └──────────────────────┘ └──────────────────────┘
-
+```
+## The project structure and role of each file : 
 
 ```
 
-## The project structure and role of each file : 
 Gen-AI-main/
 ├── chairman/                          -> Agent/service: “Chairman” role entrypoint
 │   ├── __init__.py                    -> Package marker for chairman module
