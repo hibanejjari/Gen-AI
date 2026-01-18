@@ -1,4 +1,4 @@
-# LLM Council — Local Distributed Deployment (Tailscale)
+# LLM Council : Local Distributed Deployment
 ---
 
 ## Group Information
@@ -8,20 +8,7 @@
 ---
 
 ## Table of Contents
-1. [Project Overview](#project-overview)  
-2. [Architecture](#architecture)  
-3. [Architecture Overview (Diagram)](#architecture-overview-diagram)  
-4. [Workflow (Stage 1 -> 2 -> 3)](#workflow-stage-1--2--3)  
-5. [Setup & Installation](#setup--installation)  
-6. [Requirements Compliance](#requirements-compliance)  
-7. [Configuration Guide](#configuration-guide)  
-8. [How to Run the Demo](#how-to-run-the-demo)  
-9. [Testing & Verification](#testing--verification)  
-10. [Screenshots (UI + Swagger)](#screenshots-ui--swagger)  
-11. [Technical Architecture](#technical-architecture)  
-12. [Project Structure](#project-structure)  
-13. [Team Responsibilities](#team-responsibilities)  
-14. [Generative AI Usage Statement](#generative-ai-usage-statement)
+
 
 ---
 # Project Summary
@@ -37,6 +24,7 @@ A distributed system where 5 local LLMs collaborate through a democratic 3-stage
 - **Python 3.10+** - Backend services with Pydantic validation
 - **HTML/CSS/JS** - Static frontend UI served by orchestrator
 
+## Workflow (Stage 1 → 2 → 3)
 
 - **3-stage democratic workflow**: Opinions → Reviews → Synthesis ensures diverse perspectives with anonymized peer evaluation
 - **Model diversity**: 5 different model families (Llama, Phi, SmolLM, Qwen 0.5B-1.5B) + stronger chairman (Llama 3B) for varied reasoning
@@ -45,7 +33,6 @@ A distributed system where 5 local LLMs collaborate through a democratic 3-stage
 - 
 In detail :
 
-Workflow (Stage 1 → 2 → 3)
 
 | Stage | Description | Endpoint |
 |-------|-------------|----------|
@@ -109,7 +96,7 @@ In selecting our models, our objective was to balance **speed, hardware constrai
   - Normalizes missing or invalid values to the valid `[0–10]` range
 - This ensures consistent and reliable evaluation despite LLM output variability.
 
-### Response Storage
+#### Response Storage
 
 The orchestrator stores all data **in-memory** using a Python dictionary:
 
@@ -187,9 +174,9 @@ But the limitation is that storage is **not persistent** : restarting the orches
 ---
 
 
-### DEMO Screenshots :
+## DEMO Screenshots :
 
-### UI — Home & System Status
+#### UI — Home & System Status
 
 ![Home page](images/Home_page.jpg)
 
@@ -197,7 +184,7 @@ Our interface displays in real time the status of the different PCs/council node
 
 ![UI Home — System status](images/ui_home_system_status.jpg)
 
-### UI — Stage 1 (Opinions)
+#### UI — Stage 1 (Opinions)
 
 The user enters a question and then clicks “Run Stage 1 only” to query each council node. Each PC/model then generates an independent response, displayed as expandable cards showing the node name and the model used. The goal is to collect multiple perspectives before moving to Stage 2, where these responses will be evaluated and ranked through peer review.
 
@@ -206,7 +193,7 @@ The user enters a question and then clicks “Run Stage 1 only” to query each 
 ![UI Stage 1 — Opinions](images/ui_stage1_opinions.jpg)
 
 
-### UI — Stage 2 (Reviews & Ranking)
+#### UI — Stage 2 (Reviews & Ranking)
 
 After anonymizing the Stage 1 responses (labels A, B, C, …), each council node acts as a reviewer and assigns JSON-formatted scores according to two criteria: accuracy (0–10) and insight (0–10). The interface then aggregates these evaluations to compute a total score and produce a final ranking (Rank). It also shows the mapping between each anonymized label and the associated model. This mechanism makes it possible to compare the responses more objectively before the final synthesis in Stage 3.
 
@@ -218,7 +205,7 @@ When you click “Run Stage 3 only”, the orchestrator sends the question, the 
 
 ![Stage 3 page](images/Stage-3-page.jpg)
 
-### Swagger — API Validation (Council Node)
+#### Swagger — API Validation (Council Node)
 
 We used **FastAPI**, which allows us to automatically generate clear Swagger documentation for each council node. On this page, we can see all the routes exposed by **council-1**: `GET /health` to verify that the service (and Ollama on the node side) is operational, `POST /opinion` to generate the **Stage 1** response, `POST /review` to analyze and rank the anonymized responses for **Stage 2**, as well as additional endpoints such as `POST /answer` and `GET /info`. This interface was very useful for quickly testing requests, validating input/output schemas, and ensuring that the orchestrator communicates correctly with each machine.
 
