@@ -292,11 +292,11 @@ python -m uvicorn orchestrator.main:app --host 0.0.0.0 --port 8080
 ### Using the Web UI
 
 Once all services are running, open `http://localhost:8080` and you can:
-- ✅ Run **Stage 1** only (opinions generation)
-- ✅ Run **Stage 2** only (reviews & ranking)
-- ✅ Run **Stage 3** only (synthesis)
-- ✅ Run the **complete workflow** end-to-end
-- ✅ View node health status
+-  Run **Stage 1** only (opinions generation)
+-  Run **Stage 2** only (reviews & ranking)
+-  Run **Stage 3** only (synthesis)
+-  Run the **complete workflow** end-to-end
+-  View node health status
 
 ---
 
@@ -345,22 +345,35 @@ Expected response:
 ### UI — Home & System Status
 
 ![Home page](images/Home_page.jpg)
+
+Our interface displays in real time the status of the different PCs/council nodes connected to the network: each card shows whether the node is **ONLINE** or **OFFLINE**, as well as the **Ollama model** used by the machine. If a node is unavailable, the reason is indicated. The **Chairman** status is also displayed along with its model, which makes it possible to verify that **Stage 3** can be executed.
+
 ![UI Home — System status](images/ui_home_system_status.jpg)
 
 ### UI — Stage 1 (Opinions)
 
-![UI Stage 1 — Opinions](images/ui_stage1_opinions.jpg)
+The user enters a question and then clicks “Run Stage 1 only” to query each council node. Each PC/model then generates an independent response, displayed as expandable cards showing the node name and the model used. The goal is to collect multiple perspectives before moving to Stage 2, where these responses will be evaluated and ranked through peer review.
+
 ![Stage 1 page](images/Stage-1-page.jpg)
 
+![UI Stage 1 — Opinions](images/ui_stage1_opinions.jpg)
+
+
 ### UI — Stage 2 (Reviews & Ranking)
+
+After anonymizing the Stage 1 responses (labels A, B, C, …), each council node acts as a reviewer and assigns JSON-formatted scores according to two criteria: accuracy (0–10) and insight (0–10). The interface then aggregates these evaluations to compute a total score and produce a final ranking (Rank). It also shows the mapping between each anonymized label and the associated model. This mechanism makes it possible to compare the responses more objectively before the final synthesis in Stage 3.
 
 ![UI Stage 2 — Reviews ranking](images/ui_stage2_reviews_ranking.jpg)
 
 ### UI — Stage 3 (Chairman Synthesis)
 
+When you click “Run Stage 3 only”, the orchestrator sends the question, the anonymized Stage 1 answers, and the Stage 2 reviews to the Chairman service. The Chairman then calls its Ollama model to produce a final synthesis and returns the result.
+
 ![Stage 3 page](images/Stage-3-page.jpg)
 
 ### Swagger — API Validation (Council Node)
+
+We used **FastAPI**, which allows us to automatically generate clear Swagger documentation for each council node. On this page, we can see all the routes exposed by **council-1**: `GET /health` to verify that the service (and Ollama on the node side) is operational, `POST /opinion` to generate the **Stage 1** response, `POST /review` to analyze and rank the anonymized responses for **Stage 2**, as well as additional endpoints such as `POST /answer` and `GET /info`. This interface was very useful for quickly testing requests, validating input/output schemas, and ensuring that the orchestrator communicates correctly with each machine.
 
 ![Swagger endpoints council-1](images/swagger_endpoints_council-1.jpg)
 ![Swagger /answer request body](images/swagger_answer_request_body.jpg)
@@ -411,6 +424,9 @@ When you see "health OK" or "healthy" in logs, it indicates:
   - Extracts JSON even if LLM adds surrounding text
   - Normalizes missing/invalid scores to valid `[0..10]` range
 
+#### 6) Frontend Integration: Static HTML UI Served by the Orchestrator
+
+The project includes a lightweight static frontend located at frontend/index.html. Instead of using a Python UI framework (Streamlit/Gradio), the orchestrator serves this page directly using FastAPI’s StaticFiles mounting and routes.
 ---
 
 ### Selected LLM Models
@@ -451,7 +467,7 @@ For each `query_id`, it stores:
 
 This satisfies the project requirement of storing responses in a structured dictionary.
 
-⚠️ **Limitation**: Storage is **not persistent** — restarting the orchestrator clears all data. A production system would use a database.
+**Limitation**: Storage is **not persistent** — restarting the orchestrator clears all data. A production system would use a database.
 
 ---
 
