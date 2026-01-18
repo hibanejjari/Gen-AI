@@ -9,6 +9,32 @@
 
 ## Table of Contents
 
+1. [Project Summary](#project-summary)
+   - [Project Overview](#project-overview)
+   - [Technologies Used](#technologies-used)
+   - [Workflow (Stage 1 → 2 → 3)](#workflow-stage-1--2--3)
+2. [Distinction](#distinction)
+   - [Services & Ports](#services--ports)
+   - [Network (Tailscale)](#network-tailscale)
+   - [Selected LLM Models](#selected-llm-models)
+3. [Key System Features](#key-system-features)
+   - [Health Monitoring & Graceful Degradation](#health-monitoring--graceful-degradation)
+   - [Robust JSON Review Output (Stage 2)](#robust-json-review-output-stage-2)
+   - [Response Storage](#response-storage)
+   - [Frontend Integration via Static HTML](#frontend-integration-via-static-html)
+4. [Improvements Over Original](#improvements-over-original)
+   - [Major Improvements](#major-improvements)
+5. [DEMO Screenshots](#demo-screenshots)
+   - [UI — Home & System Status](#ui--home--system-status)
+   - [UI — Stage 1 (Opinions)](#ui--stage-1-opinions)
+   - [UI — Stage 2 (Reviews & Ranking)](#ui--stage-2-reviews--ranking)
+   - [UI — Stage 3 (Chairman Synthesis)](#ui--stage-3-chairman-synthesis)
+   - [Swagger — API Validation (Council Node)](#swagger--api-validation-council-node)
+6. [Team Responsibilities](#team-responsibilities)
+7. [Generative AI Usage Statement](#generative-ai-usage-statement)
+   - [Tools & Models Used](#tools--models-used)
+   - [Usage Purpose](#usage-purpose)
+   - [Transparency](#transparency)
 
 ---
 # Project Summary
