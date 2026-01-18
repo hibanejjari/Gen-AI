@@ -427,27 +427,6 @@ This satisfies the project requirement of storing responses in a structured dict
 
 ---
 
-## Project Structure
-
-```text
-Gen-AI-main/
-├── README.md
-├── config.yaml
-├── chairman/
-│   └── main.py
-├── council_node/
-│   └── main.py
-├── orchestrator/
-│   └── main.py
-├── common/
-│   ├── config.py
-│   ├── http_client.py
-│   └── logging_config.py
-├── frontend/
-│   └── index.html
-└── images/
-    └── (screenshots here)
-```
 
 ---
 
